@@ -1,7 +1,7 @@
 # Copyright (c) 2018-2022 The MobileCoin Foundation
 
 # Working directory is the root of the project
-pwd=$(shell pwd)/../
+pwd=$(shell pwd)
 
 .PHONY : build test libs docker_image clean setup-docker all default strip copy_artifacts dist
 default: build
@@ -19,7 +19,7 @@ MIN_API_LEVEL_64_BIT = 21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
 
 setup-rust:
-	rustup toolchain install $(file < ../rust-toolchain)
+	rustup toolchain install $(file < mobilecoin/rust-toolchain)
 	rustup component add rustfmt
 	rustup target add $(ARCHS)
 	rustup update
@@ -60,7 +60,7 @@ x86_64-linux-android: CARGO_ENV_FLAGS += \
 	CARGO_TARGET_X86_64_LINUX_ANDROID_AR=x86_64-linux-android-ar \
 	CMAKE_TARGET_OVERRIDE=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)
 
-$(ARCHS): setup-rust
+$(ARCHS): 
 	$(CARGO_ENV_FLAGS) cargo build \
 		$(CARGO_BUILD_FLAGS) \
 		--target $@
@@ -79,7 +79,7 @@ ci: setup-docker
 		-e MAVEN_PASSWORD \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
-		-w /home/rust/android-bindings \
+		-w /home/rust \
 		$(DOCKER_BUILDER_IMAGE_TAG) \
 		make publish
 
@@ -89,37 +89,37 @@ copy_artifacts:
 	mkdir -p $(JNI_LIBS_PATH)/x86
 	mkdir -p $(JNI_LIBS_PATH)/x86_64
 	mkdir -p build/proto
-	cp -f ../target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/arm64-v8a/libmobilecoin.so
-	cp -f ../target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/armeabi-v7a/libmobilecoin.so
-	cp -f ../target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86/libmobilecoin.so
-	cp -f ../target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86_64/libmobilecoin.so
-	cp -f ../api/proto/blockchain.proto build/proto/
-	cp -f ../api/proto/printable.proto build/proto/
-	cp -f ../consensus/api/proto/consensus_client.proto build/proto/
-	cp -f ../api/proto/external.proto build/proto/
-	cp -f ../consensus/api/proto/consensus_common.proto build/proto/
-	cp -f ../consensus/api/proto/consensus_peer.proto build/proto/
-	cp -f ../attest/api/proto/attest.proto build/proto/
-	cp -f ../fog/report/api/proto/report.proto build/proto/
-	cp -f ../fog/api/proto/view.proto build/proto/
-	cp -f ../fog/api/proto/fog_common.proto build/proto/
-	cp -f ../fog/api/proto/kex_rng.proto build/proto/
-	cp -f ../fog/api/proto/ledger.proto build/proto/
-	cp -f ../fog/api/proto/ingest.proto build/proto/
-	cp -f ../fog/api/proto/ingest_common.proto build/proto/
+	cp -f target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/arm64-v8a/libmobilecoin.so
+	cp -f target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/armeabi-v7a/libmobilecoin.so
+	cp -f target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86/libmobilecoin.so
+	cp -f target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86_64/libmobilecoin.so
+	cp -f mobilecoin/api/proto/blockchain.proto build/proto/
+	cp -f mobilecoin/api/proto/printable.proto build/proto/
+	cp -f mobilecoin/consensus/api/proto/consensus_client.proto build/proto/
+	cp -f mobilecoin/api/proto/external.proto build/proto/
+	cp -f mobilecoin/consensus/api/proto/consensus_common.proto build/proto/
+	cp -f mobilecoin/consensus/api/proto/consensus_peer.proto build/proto/
+	cp -f mobilecoin/attest/api/proto/attest.proto build/proto/
+	cp -f mobilecoin/fog/report/api/proto/report.proto build/proto/
+	cp -f mobilecoin/fog/api/proto/view.proto build/proto/
+	cp -f mobilecoin/fog/api/proto/fog_common.proto build/proto/
+	cp -f mobilecoin/fog/api/proto/kex_rng.proto build/proto/
+	cp -f mobilecoin/fog/api/proto/ledger.proto build/proto/
+	cp -f mobilecoin/fog/api/proto/ingest.proto build/proto/
+	cp -f mobilecoin/fog/api/proto/ingest_common.proto build/proto/
 
 strip:
-	aarch64-linux-android-strip ../target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
-	arm-linux-androideabi-strip ../target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so
-	i686-linux-android-strip ../target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
-	x86_64-linux-android-strip ../target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
+	aarch64-linux-android-strip target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
+	arm-linux-androideabi-strip target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so
+	i686-linux-android-strip target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
+	x86_64-linux-android-strip target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
 
 build: setup-docker
 	docker run \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
-		-w /home/rust/android-bindings \
+		-w /home/rust \
 		$(DOCKER_BUILDER_IMAGE_TAG) \
 		make libs
 
@@ -129,7 +129,7 @@ dist: build
 docker_image:
 	docker build \
 		-t $(DOCKER_BUILDER_IMAGE_TAG) \
-		-f docker/Dockerfile ../
+		docker
 
 publish_docker_image: docker_image
 	docker image push $(DOCKER_BUILDER_IMAGE_TAG)
@@ -139,7 +139,7 @@ clean:
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
-		-w /home/rust/android-bindings \
+		-w /home/rust/ \
 		$(DOCKER_BUILDER_IMAGE_TAG) \
 		cargo clean
 
@@ -149,7 +149,7 @@ bash: setup-docker
 		-it \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
-		-w /home/rust/android-bindings \
+		-w /home/rust/ \
 		$(DOCKER_BUILDER_IMAGE_TAG) \
 		bash
 

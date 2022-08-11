@@ -6,16 +6,18 @@ on:
 jobs:
   build_publish:
     runs-on: [self-hosted, Linux, small]
-    container: gcr.io/mobilenode-211420/android-bindings-builder:1_4
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+          fetch-depth: 10
       - name: Build and Publish Bindings
         env:
           MAVEN_USER: ${{ secrets.MAVEN_USER }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-        working-directory: ./android-bindings
+        working-directory: ./
         run: |
           make ci
 

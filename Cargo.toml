@@ -9,34 +9,44 @@ license = "GPL-3.0"
 name = "mobilecoin_android"
 crate-type = ["cdylib"]
 
+[profile.mobile]
+inherits = "release"
+debug = false
+lto = true
+
+[profile.mobile-release]
+inherits = "mobile"
+codegen-units = 1
+
+
 [dependencies]
 # External dependencies
 crc = "3.0.0"
 
 # fog
-mc-fog-kex-rng = { path = "../fog/kex_rng" }
+mc-fog-kex-rng = { path = "mobilecoin/fog/kex_rng" }
 
 # mobilecoin
-mc-account-keys = { path = "../account-keys" }
-mc-account-keys-slip10 = { path = "../account-keys/slip10" }
-mc-api = { path = "../api" }
-mc-attest-ake = { path = "../attest/ake", default-features = false }
-mc-attest-core = { path = "../attest/core", default-features = false }
-mc-attest-verifier = { path = "../attest/verifier", default-features = false }
-mc-common = { path = "../common" }
-mc-crypto-box = { path = "../crypto/box" }
-mc-crypto-keys = { path = "../crypto/keys" }
-mc-crypto-noise = { path = "../crypto/noise" }
-mc-crypto-rand = { path = "../crypto/rand", features = ["std"] }
-mc-crypto-ring-signature-signer = { path = "../crypto/ring-signature/signer", default-features = false }
-mc-fog-report-types = { path = "../fog/report/types" }
-mc-fog-report-validation = { path = "../fog/report/validation" }
-mc-transaction-core = { path = "../transaction/core" }
-mc-transaction-std = { path = "../transaction/std" }
-mc-util-encodings = { path = "../util/encodings" }
-mc-util-from-random = { path = "../util/from-random" }
-mc-util-serial = { path = "../util/serial" }
-mc-util-uri = { path = "../util/uri" }
+mc-account-keys = { path = "mobilecoin/account-keys" }
+mc-account-keys-slip10 = { path = "mobilecoin/account-keys/slip10" }
+mc-api = { path = "mobilecoin/api" }
+mc-attest-ake = { path = "mobilecoin/attest/ake", default-features = false }
+mc-attest-core = { path = "mobilecoin/attest/core", default-features = false }
+mc-attest-verifier = { path = "mobilecoin/attest/verifier", default-features = false }
+mc-common = { path = "mobilecoin/common" }
+mc-crypto-box = { path = "mobilecoin/crypto/box" }
+mc-crypto-keys = { path = "mobilecoin/crypto/keys" }
+mc-crypto-noise = { path = "mobilecoin/crypto/noise" }
+mc-crypto-rand = { path = "mobilecoin/crypto/rand", features = ["std"] }
+mc-crypto-ring-signature-signer = { path = "mobilecoin/crypto/ring-signature/signer", default-features = false }
+mc-fog-report-types = { path = "mobilecoin/fog/report/types" }
+mc-fog-report-validation = { path = "mobilecoin/fog/report/validation" }
+mc-transaction-core = { path = "mobilecoin/transaction/core" }
+mc-transaction-std = { path = "mobilecoin/transaction/std" }
+mc-util-encodings = { path = "mobilecoin/util/encodings" }
+mc-util-from-random = { path = "mobilecoin/util/from-random" }
+mc-util-serial = { path = "mobilecoin/util/serial" }
+mc-util-uri = { path = "mobilecoin/util/uri" }
 
 # third-party
 aes-gcm = { version = "0.9.4", default-features = false }
@@ -51,3 +61,35 @@ sha2 = { version = "0.10", default-features = false }
 slip10_ed25519 = "0.1.3"
 tiny-bip39 = "1.0"
 zeroize = "1.5"
+
+[patch.crates-io]
+# Fork and rename to use "OG" dalek-cryptography with latest dependencies.
+bulletproofs-og = { git = "https://github.com/mobilecoinfoundation/bulletproofs.git", rev = "65f8af4ca0bc1cb2fd2148c3259a0a76b155ff3e" }
+
+# This version contains iOS build fixes
+cmake = { git = "https://github.com/alexcrichton/cmake-rs", rev = "5f89f90ee5d7789832963bffdb2dcb5939e6199c" }
+
+# Fix issues with recent nightlies, bump curve25519-dalek version
+curve25519-dalek = { git = "https://github.com/mobilecoinfoundation/curve25519-dalek.git", rev = "8791722e0273762552c9a056eaccb7df6baf44d7" }
+ed25519-dalek = { git = "https://github.com/mobilecoinfoundation/ed25519-dalek.git", rev = "4194e36abc75722e6fba7d552e719448fc38c51f" }
+
+# mbedtls patched to allow certificate verification with a profile
+mbedtls = { git = "https://github.com/mobilecoinfoundation/rust-mbedtls.git", rev = "ac6ee17a31e37311ce7f4fa0649c340e5d85258d" }
+mbedtls-sys-auto = { git = "https://github.com/mobilecoinfoundation/rust-mbedtls.git", rev = "ac6ee17a31e37311ce7f4fa0649c340e5d85258d" }
+
+# Override lmdb-rkv for a necessary bugfix (see https://github.com/mozilla/lmdb-rs/pull/80)
+lmdb-rkv = { git = "https://github.com/mozilla/lmdb-rs", rev = "df1c2f5" }
+
+# Fork and rename to use "OG" dalek-cryptography.
+schnorrkel-og = { git = "https://github.com/mobilecoinfoundation/schnorrkel.git", rev = "5c98ae068ee4652d6df6463b549fbf2d5d132faa" }
+
+# Fixes the following:
+# * Allow enabling `serde/std` without also requiring `serde_cbor/std` to be enabled.
+#   See: https://github.com/pyfisch/cbor/pull/198
+serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", rev = "4c886a7c1d523aae1ec4aa7386f402cb2f4341b5" }
+
+# Fix issues with recent nightlies, bump curve25519-dalek version
+x25519-dalek = { git = "https://github.com/mobilecoinfoundation/x25519-dalek.git", rev = "c1966b8743d320cd07a54191475e5c0f94b2ea30" }
+
+# Override diesel dependency with our fork, to statically link SQLite.
+diesel = { git = "https://github.com/mobilecoinofficial/diesel", rev = "026f6379715d27c8be48396e5ca9059f4a263198" }
