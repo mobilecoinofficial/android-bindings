@@ -47,14 +47,14 @@ use mc_transaction_core::{
     },
     ring_signature::KeyImage,
     tx::{Tx, TxOut, TxOutConfirmationNumber, TxOutMembershipProof},
-    Amount, BlockVersion, CompressedCommitment, MaskedAmount, TokenId,
+    Amount, BlockVersion, CompressedCommitment, MaskedAmount, SignedContingentInput, TokenId,
 };
 use mc_transaction_std::{
     AuthenticatedSenderMemo, AuthenticatedSenderWithPaymentRequestIdMemo, DestinationMemo,
     GiftCodeCancellationMemo, GiftCodeCancellationMemoBuilder, GiftCodeFundingMemo,
     GiftCodeFundingMemoBuilder, GiftCodeSenderMemo, GiftCodeSenderMemoBuilder, InputCredentials,
     MemoBuilder, MemoPayload, RTHMemoBuilder, ReservedSubaddresses, SenderMemoCredential,
-    TransactionBuilder, TxOutContext,
+    SignedContingentInputBuilder, TransactionBuilder, TxOutContext,
 };
 
 use mc_util_from_random::FromRandom;
@@ -1983,6 +1983,21 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1input(
     })
 }
 
+/*#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1presigned_1input(
+    env: JNIEnv,
+    obj: JObject,
+    signed_input: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let mut tx_builder: MutexGuard<TransactionBuilder<FogResolver>> =
+            env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+        let sci: MutexGuard<SignedContingentInput> = env.get_rust_field(signed_input, RUST_OBJ_FIELD)?;
+        tx_builder.add_presigned_input(sci.to_owned());
+        Ok(())
+    })
+}*/
+
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1output(
     env: JNIEnv,
@@ -2200,6 +2215,84 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_build_1tx(
             Ok(ptr as jlong)
         },
     )
+}
+
+/********************************************************************
+ * SignedContingentInputBuilder
+ */
+
+ #[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_init_1jni(
+    env: JNIEnv,
+    obj: JObject,
+    fog_resolver: JObject,
+    memo_builder_box: JObject,
+    block_version: jint,
+    ring: jobjectArray,
+    membership_proofs: jobjectArray,
+    real_index: jshort,
+    onetime_private_key: JObject,
+    view_private_key: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let fog_resolver: MutexGuard<FogResolver> =
+            env.get_rust_field(fog_resolver, RUST_OBJ_FIELD)?;
+        let block_version = BlockVersion::try_from(block_version as u32).unwrap();
+        let memo_builder_box: Box<dyn MemoBuilder + Send + Sync> =
+            env.take_rust_field(memo_builder_box, RUST_OBJ_FIELD)?;
+
+        let ring: Vec<TxOut> = (0..env.get_array_length(ring)?)
+            .map(|index| {
+                let obj = env.get_object_array_element(ring, index)?;
+                let tx_out: MutexGuard<TxOut> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+                Ok(tx_out.clone())
+            })
+            .collect::<Result<_, jni::errors::Error>>()?;
+
+        let membership_proofs: Vec<TxOutMembershipProof> = (0..env
+            .get_array_length(membership_proofs)?)
+            .map(|index| {
+                let obj = env.get_object_array_element(membership_proofs, index)?;
+                let membership_proof: MutexGuard<TxOutMembershipProof> =
+                    env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+                Ok(membership_proof.clone())
+            })
+            .collect::<Result<_, jni::errors::Error>>()?;
+
+        let onetime_private_key: MutexGuard<RistrettoPrivate> =
+            env.get_rust_field(onetime_private_key, RUST_OBJ_FIELD)?;
+
+        let view_private_key: MutexGuard<RistrettoPrivate> =
+            env.get_rust_field(view_private_key, RUST_OBJ_FIELD)?;
+
+        let input_credentials = InputCredentials::new(
+            ring,
+            membership_proofs,
+            real_index as usize,
+            *onetime_private_key,
+            *view_private_key,
+        )?;
+
+        let sci_builder = SignedContingentInputBuilder::new_with_box(
+            block_version,
+            input_credentials,
+            fog_resolver.clone(),
+            memo_builder_box,
+        )?;
+
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, sci_builder)?)
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_finalize_1jni(
+    env: JNIEnv,
+    obj: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let _: SignedContingentInputBuilder<FogResolver> = env.take_rust_field(obj, RUST_OBJ_FIELD)?;
+        Ok(())
+    })
 }
 
 /********************************************************************

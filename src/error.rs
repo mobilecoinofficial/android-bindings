@@ -11,7 +11,7 @@ use mc_fog_kex_rng::Error as KexRngError;
 use mc_transaction_core::{
     ring_signature::Error as RingSignatureError, AmountError, MemoError, NewMemoError,
 };
-use mc_transaction_std::TxBuilderError;
+use mc_transaction_std::{TxBuilderError, SignedContingentInputBuilderError};
 use mc_util_encodings::Error as EncodingsError;
 use mc_util_serial::{
     decode::Error as DeserializeError, encode::Error as SerializeError, DecodeError, EncodeError,
@@ -98,6 +98,9 @@ pub enum McError {
 
     /// Retrieving memo data failed: {0}
     MemoData(MemoError),
+
+    /// SignedContingentInputBuilder: {0}
+    SignedContingentInputBuilder(SignedContingentInputBuilderError),
 }
 
 impl From<FromUtf8Error> for McError {
@@ -187,6 +190,12 @@ impl From<DeserializeError> for McError {
 impl From<TxBuilderError> for McError {
     fn from(src: TxBuilderError) -> Self {
         Self::TxBuilder(src)
+    }
+}
+
+impl From<SignedContingentInputBuilderError> for McError {
+    fn from(src: SignedContingentInputBuilderError) -> Self {
+        Self::SignedContingentInputBuilder(src)
     }
 }
 
