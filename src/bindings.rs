@@ -2285,6 +2285,117 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_in
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_add_1required_1output(
+    env: JNIEnv,
+    obj: JObject,
+    value: JObject,
+    token_id: jlong,
+    recipient: JObject,
+    java_rng: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let mut sci_builder: MutexGuard<SignedContingentInputBuilder<FogResolver>> =
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+
+            let value = jni_big_int_to_u64(env, value)?;
+            let token_id = TokenId::from(token_id as u64);
+
+            let recipient: MutexGuard<PublicAddress> =
+                env.get_rust_field(recipient, RUST_OBJ_FIELD)?;
+
+            let mut rng: MutexGuard<ChaCha20Rng> = env.get_rust_field(java_rng, RUST_OBJ_FIELD)?;
+
+            let amount = Amount { value, token_id };
+
+            let (tx_out, _confirmation) = sci_builder.add_required_output(amount, &recipient, &mut *rng)?;
+
+            let mbox = Box::new(Mutex::new(tx_out));
+            let ptr: *mut Mutex<TxOut> = Box::into_raw(mbox);
+            Ok(ptr as jlong)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_add_1change_1output(
+    env: JNIEnv,
+    obj: JObject,
+    value: JObject,
+    token_id: jlong,
+    account_key: JObject,
+    java_rng: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let mut sci_builder: MutexGuard<SignedContingentInputBuilder<FogResolver>> =
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let account_key: MutexGuard<AccountKey> =
+                env.get_rust_field(account_key, RUST_OBJ_FIELD)?;
+
+            let value = jni_big_int_to_u64(env, value)?;
+            let token_id = TokenId::from(token_id as u64);
+
+            let change_destination = ReservedSubaddresses::from(&*account_key);
+            let mut rng: MutexGuard<ChaCha20Rng> = env.get_rust_field(java_rng, RUST_OBJ_FIELD)?;
+
+            let amount = Amount { value, token_id };
+
+            let (tx_out, _confirmation) =
+                sci_builder.add_required_change_output(amount, &change_destination, &mut *rng)?;
+
+            let mbox = Box::new(Mutex::new(tx_out));
+            let ptr: *mut Mutex<TxOut> = Box::into_raw(mbox);
+            Ok(ptr as jlong)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_set_1tombstone_1block(
+    env: JNIEnv,
+    obj: JObject,
+    value: jlong,
+) {
+    jni_ffi_call(&env, |env| {
+        let mut sci_builder: MutexGuard<SignedContingentInputBuilder<FogResolver>> =
+            env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+
+        sci_builder.set_tombstone_block(value as u64);
+
+        Ok(())
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_build_1sci(
+    env: JNIEnv,
+    obj: JObject,
+    java_rng: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let sci_builder: SignedContingentInputBuilder<FogResolver> =
+                env.take_rust_field(obj, RUST_OBJ_FIELD)?;
+
+            let mut rng: MutexGuard<ChaCha20Rng> = env.get_rust_field(java_rng, RUST_OBJ_FIELD)?;
+            let sci = sci_builder.build(&NoKeysRingSigner {}, &mut *rng)?;
+
+            let mbox = Box::new(Mutex::new(sci));
+            let ptr: *mut Mutex<SignedContingentInput> = Box::into_raw(mbox);
+
+            Ok(ptr as jlong)
+        },
+    )
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_finalize_1jni(
     env: JNIEnv,
     obj: JObject,
