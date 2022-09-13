@@ -1983,7 +1983,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1input(
     })
 }
 
-/*#[no_mangle]
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1presigned_1input(
     env: JNIEnv,
     obj: JObject,
@@ -1993,16 +1993,17 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1presign
         let mut tx_builder: MutexGuard<TransactionBuilder<FogResolver>> =
             env.get_rust_field(obj, RUST_OBJ_FIELD)?;
         let sci: MutexGuard<SignedContingentInput> = env.get_rust_field(signed_input, RUST_OBJ_FIELD)?;
-        tx_builder.add_presigned_input(sci.to_owned());
+        tx_builder.add_presigned_input(sci.to_owned())?;
         Ok(())
     })
-}*/
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1output(
     env: JNIEnv,
     obj: JObject,
     value: JObject,
+    token_id_long: jlong,
     recipient: JObject,
     confirmation_number_out: jbyteArray,
     java_rng: JObject,
@@ -2015,13 +2016,9 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1output(
                 env.get_rust_field(obj, RUST_OBJ_FIELD)?;
 
             let value = jni_big_int_to_u64(env, value)?;
+            let token_id = TokenId::from(token_id_long as u64);
 
-            // TODO (GH #1867): If you want to do mixed transactions, use something other
-            // than fee_token_id here.
-            let amount = Amount {
-                value: value as u64,
-                token_id: tx_builder.get_fee_token_id(),
-            };
+            let amount = Amount::new(value as u64, token_id);
 
             let recipient: MutexGuard<PublicAddress> =
                 env.get_rust_field(recipient, RUST_OBJ_FIELD)?;
@@ -2057,6 +2054,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1change_
     env: JNIEnv,
     obj: JObject,
     value: JObject,
+    token_id_long: jlong,
     source_account_key: JObject,
     confirmation_number_out: jbyteArray,
     java_rng: JObject,
@@ -2071,15 +2069,11 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1change_
                 env.get_rust_field(source_account_key, RUST_OBJ_FIELD)?;
 
             let value = jni_big_int_to_u64(env, value)?;
+            let token_id = TokenId::from(token_id_long as u64);
             let change_destination = ReservedSubaddresses::from(&*source_account_key);
             let mut rng: MutexGuard<ChaCha20Rng> = env.get_rust_field(java_rng, RUST_OBJ_FIELD)?;
 
-            // TODO (GH #1867): If you want to do mixed transactions, use something other
-            // than fee_token_id here.
-            let amount = Amount {
-                value: value as u64,
-                token_id: tx_builder.get_fee_token_id(),
-            };
+            let amount = Amount::new(value as u64, token_id);
 
             let tx_out_context =
                 tx_builder.add_change_output(amount, &change_destination, &mut *rng)?;
@@ -2218,6 +2212,142 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_build_1tx(
 }
 
 /********************************************************************
+ * SignedContingentInput
+ */
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1required_1output_1amounts(
+    env: JNIEnv,
+    obj: JObject,
+) -> jobjectArray {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let sci: MutexGuard<SignedContingentInput> = 
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let required_outputs = &sci.required_output_amounts;
+
+            let default_value = env.new_object(
+                "java/math/BigInteger",
+                "(I[B)V",
+                &[
+                    jni::objects::JValue::Int(1),
+                    env.byte_array_from_slice(&[])?
+                        .into(),
+                ],
+            )?;
+            let default_java_token_id_ul = env.new_object(
+                "com/mobilecoin/lib/UnsignedLong",
+                "(J)V",
+                &[jni::objects::JValue::Long(0)],
+            )?;
+            let default_java_token_id = env.new_object(
+                "com/mobilecoin/lib/TokenId",
+                "(Lcom/mobilecoin/lib/UnsignedLong;)V",
+                &[jni::objects::JValue::Object(default_java_token_id_ul)],
+            )?;
+            let default_amount = env
+                    .new_object(
+                        "com/mobilecoin/lib/Amount",
+                        "(Ljava/math/BigInteger;Lcom/mobilecoin/lib/TokenId;)V",
+                        &[
+                            jni::objects::JValue::Object(default_value),
+                            jni::objects::JValue::Object(default_java_token_id),
+                        ],
+                    )?
+                    .into_inner();
+            // Create a Amount array
+            let arr = env.new_object_array(
+                required_outputs.len() as i32,
+                "com/mobilecoin/lib/Amount",
+                default_amount,
+            )?;
+            for (i, amount) in required_outputs.iter().enumerate() {
+                let value = env.new_object(
+                    "java/math/BigInteger",
+                    "(I[B)V",
+                    &[
+                        jni::objects::JValue::Int(1),
+                        env.byte_array_from_slice(&amount.value.to_be_bytes())?
+                            .into(),
+                    ],
+                )?;
+                let java_token_id_ul = env.new_object(
+                    "com/mobilecoin/lib/UnsignedLong",
+                    "(J)V",
+                    &[jni::objects::JValue::Long(amount.token_id as i64)],
+                )?;
+                let java_token_id = env.new_object(
+                    "com/mobilecoin/lib/TokenId",
+                    "(Lcom/mobilecoin/lib/UnsignedLong;)V",
+                    &[jni::objects::JValue::Object(java_token_id_ul)],
+                )?;
+                let java_amount = env
+                    .new_object(
+                        "com/mobilecoin/lib/Amount",
+                        "(Ljava/math/BigInteger;Lcom/mobilecoin/lib/TokenId;)V",
+                        &[
+                            jni::objects::JValue::Object(value),
+                            jni::objects::JValue::Object(java_token_id),
+                        ],
+                    )?
+                    .into_inner();
+                env.set_object_array_element(arr, i as i32, java_amount)?;
+            }
+
+            Ok(arr)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1pseudo_1output_1amount(
+    env: JNIEnv,
+    obj: JObject,
+) -> jobject {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let sci: MutexGuard<SignedContingentInput> = 
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let pseudo_output_amount = &sci.pseudo_output_amount;
+
+            let value = env.new_object(
+                "java/math/BigInteger",
+                "(I[B)V",
+                &[
+                    jni::objects::JValue::Int(1),
+                    env.byte_array_from_slice(&pseudo_output_amount.value.to_be_bytes())?
+                        .into(),
+                ],
+            )?;
+            let token_id_ul = env.new_object(
+                "com/mobilecoin/lib/UnsignedLong",
+                "(J)V",
+                &[jni::objects::JValue::Long(pseudo_output_amount.token_id as i64)],
+            )?;
+            let token_id = env.new_object(
+                "com/mobilecoin/lib/TokenId",
+                "(Lcom/mobilecoin/lib/UnsignedLong;)V",
+                &[jni::objects::JValue::Object(token_id_ul)],
+            )?;
+
+            Ok(env
+                .new_object(
+                    "com/mobilecoin/lib/Amount",
+                    "(Ljava/math/BigInteger;Lcom/mobilecoin/lib/TokenId;)V",
+                    &[
+                        jni::objects::JValue::Object(value),
+                        jni::objects::JValue::Object(token_id),
+                    ],
+                )?
+                .into_inner())
+        },
+    )
+}
+
+/********************************************************************
  * SignedContingentInputBuilder
  */
 
@@ -2320,7 +2450,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_ad
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_add_1change_1output(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_add_1required_1change_1output(
     env: JNIEnv,
     obj: JObject,
     value: JObject,
