@@ -2347,6 +2347,34 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1pseu
     )
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_is_1valid(
+    env: JNIEnv,
+    obj: JObject,
+) -> jboolean {
+    jni_ffi_call_or(
+        || Ok(JNI_FALSE),
+        &env,
+        |env| {
+            let sci: MutexGuard<SignedContingentInput> =
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+
+            Ok(sci.validate().is_ok() as u8)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_finalize_1jni(
+    env: JNIEnv,
+    obj: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let _: SignedContingentInput = env.take_rust_field(obj, RUST_OBJ_FIELD)?;
+        Ok(())
+    })
+}
+
 /********************************************************************
  * SignedContingentInputBuilder
  */
