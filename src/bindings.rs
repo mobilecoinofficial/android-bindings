@@ -2348,6 +2348,70 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1pseu
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1ring_1bytes(
+    env: JNIEnv,
+    obj: JObject,
+) -> jobjectArray {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let sci: MutexGuard<SignedContingentInput> = 
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let ring = &sci.tx_in.ring;
+
+            // Create a byte[][]
+            let arr = env.new_object_array(
+                ring.len() as i32,
+                "[B",
+                env.byte_array_from_slice(&[])?,
+            )?;
+
+            for i in 0..ring.len() {
+                let encoded_tx_out = mc_util_serial::encode(&ring[i]);
+                env.set_object_array_element(
+                    arr,
+                    i as i32,
+                    env.byte_array_from_slice(&encoded_tx_out)?)?;
+            }
+
+            Ok(arr)
+
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_to_1byte_1array(
+    env: JNIEnv,
+    obj: JObject,
+) -> jbyteArray {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let sci: MutexGuard<SignedContingentInput> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let bytes = mc_util_serial::encode(&*sci);
+            Ok(env.byte_array_from_slice(&bytes)?)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_init_1from_1bytes(
+    env: JNIEnv,
+    obj: JObject,
+    bytes: jbyteArray,
+) {
+    jni_ffi_call(&env, |env| {
+        let protobuf_bytes = env.convert_byte_array(bytes)?;
+        let sci: SignedContingentInput = mc_util_serial::decode(&protobuf_bytes)?;
+
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, sci)?)
+    })
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_is_1valid(
     env: JNIEnv,
     obj: JObject,
