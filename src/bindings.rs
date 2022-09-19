@@ -38,8 +38,8 @@ use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPrivate, RistrettoPubli
 use mc_crypto_rand::{McRng, RngCore};
 use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 use mc_fog_kex_rng::{BufferedRng, KexRngPubkey, NewFromKex, StoredRng, VersionedKexRng};
-use mc_fog_report_types::{Report, ReportResponse};
-use mc_fog_report_validation::{FogReportResponses, FogResolver};
+use mc_fog_report_resolver::FogResolver;
+use mc_fog_report_types::{FogReportResponses, Report, ReportResponse};
 use mc_transaction_core::{
     get_tx_out_shared_secret,
     onetime_keys::{
