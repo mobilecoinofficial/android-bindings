@@ -1551,6 +1551,29 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_GiftCodeCancellationMemo_get_1f
  * TxOut
  */
 
+fn get_subaddress_index(
+    tx_out_pub_key: &RistrettoPublic,
+    tx_out_target_key: &RistrettoPublic,
+    account_key: &AccountKey
+) -> Result<u64, McError> {
+
+    let subaddress_spk = recover_public_subaddress_spend_key(
+        account_key.view_private_key(),
+        tx_out_target_key,
+        tx_out_pub_key,
+    );
+    let spsk_to_index: BTreeMap<RistrettoPublic, u64> = (u64::MIN
+        ..=DEFAULT_SUBADDRESS_INDEX)
+        .chain(CHANGE_SUBADDRESS_INDEX..INVALID_SUBADDRESS_INDEX)
+        .map(|index| (*account_key.subaddress(index).spend_public_key(), index))
+        .collect();
+    let subaddress_index = spsk_to_index
+        .get(&subaddress_spk)
+        .ok_or_else(|| McError::Other("Subaddress match error".to_owned()))?;
+    Ok(subaddress_index.to_owned())
+    
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TxOut_init_1from_1protobuf_1bytes(
     env: JNIEnv,
@@ -1574,6 +1597,30 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TxOut_finalize_1jni(env: JNIEnv
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TxOut_get_1subaddress_1index(
+    env: JNIEnv,
+    obj: JObject,
+    account_key: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let tx_out: MutexGuard<TxOut> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let account_key: MutexGuard<AccountKey> =
+                env.get_rust_field(account_key, RUST_OBJ_FIELD)?;
+            
+            let tx_out_pub_key = RistrettoPublic::try_from(&tx_out.public_key)?;
+            let tx_out_target_key = RistrettoPublic::try_from(&tx_out.target_key)?;
+
+            let subaddress_index = get_subaddress_index(&tx_out_pub_key, &tx_out_target_key, &account_key)?;
+
+            Ok(subaddress_index as jlong)
+        },
+    )
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TxOut_compute_1key_1image(
     env: JNIEnv,
     obj: JObject,
@@ -1589,24 +1636,12 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TxOut_compute_1key_1image(
             let tx_pub_key = RistrettoPublic::try_from(&tx_out.public_key)?;
             let tx_out_target_key = RistrettoPublic::try_from(&tx_out.target_key)?;
 
-            let subaddress_spk = recover_public_subaddress_spend_key(
-                account_key.view_private_key(),
-                &tx_out_target_key,
-                &tx_pub_key,
-            );
-            let spsk_to_index: BTreeMap<RistrettoPublic, u64> = (u64::MIN
-                ..=DEFAULT_SUBADDRESS_INDEX)
-                .chain(CHANGE_SUBADDRESS_INDEX..INVALID_SUBADDRESS_INDEX)
-                .map(|index| (*account_key.subaddress(index).spend_public_key(), index))
-                .collect();
-            let subaddress_index = spsk_to_index
-                .get(&subaddress_spk)
-                .ok_or_else(|| McError::Other("Subaddress match error".to_owned()))?;
+            let subaddress_index = get_subaddress_index(&tx_pub_key, &tx_out_target_key, &account_key)?;
 
             let onetime_private_key = recover_onetime_private_key(
                 &tx_pub_key,
                 account_key.view_private_key(),
-                &account_key.subaddress_spend_private(*subaddress_index),
+                &account_key.subaddress_spend_private(subaddress_index),
             );
 
             let key_image = KeyImage::from(&onetime_private_key);
@@ -2651,24 +2686,12 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_Util_recover_1onetime_1private_
             let account_key: MutexGuard<AccountKey> =
                 env.get_rust_field(account_key, RUST_OBJ_FIELD)?;
 
-            let subaddress_spk = recover_public_subaddress_spend_key(
-                account_key.view_private_key(),
-                &tx_target_key,
-                &tx_pub_key,
-            );
-            let spsk_to_index: BTreeMap<RistrettoPublic, u64> = (u64::MIN
-                ..=DEFAULT_SUBADDRESS_INDEX)
-                .chain(CHANGE_SUBADDRESS_INDEX..INVALID_SUBADDRESS_INDEX)
-                .map(|index| (*account_key.subaddress(index).spend_public_key(), index))
-                .collect();
-            let subaddress_index = spsk_to_index
-                .get(&subaddress_spk)
-                .ok_or_else(|| McError::Other("Subaddress match error".to_owned()))?;
+            let subaddress_index = get_subaddress_index(&tx_pub_key, &tx_target_key, &account_key)?;
 
             let key = recover_onetime_private_key(
                 &tx_pub_key,
                 account_key.view_private_key(),
-                &account_key.subaddress_spend_private(*subaddress_index),
+                &account_key.subaddress_spend_private(subaddress_index),
             );
 
             let mbox = Box::new(Mutex::new(key));
