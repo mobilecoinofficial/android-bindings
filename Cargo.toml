@@ -24,29 +24,32 @@ codegen-units = 1
 crc = "3.0.0"
 
 # fog
-mc-fog-kex-rng = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
+mc-fog-kex-rng = { path = "mobilecoin/fog/kex_rng" }
 
 # mobilecoin
-mc-account-keys = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-account-keys-slip10 = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-api = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-attest-ake = { git = "https://github.com/mobilecoinfoundation/mobilecoin", default-features = false }
-mc-attest-core = { git = "https://github.com/mobilecoinfoundation/mobilecoin", default-features = false }
-mc-attest-verifier = { git = "https://github.com/mobilecoinfoundation/mobilecoin", default-features = false }
-mc-common = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-crypto-box = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-crypto-keys = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-crypto-noise = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-crypto-rand = { git = "https://github.com/mobilecoinfoundation/mobilecoin", features = ["std"] }
-mc-crypto-ring-signature-signer = { git = "https://github.com/mobilecoinfoundation/mobilecoin", default-features = false }
-mc-fog-report-types = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-fog-report-validation = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-transaction-core = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-transaction-std = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-util-encodings = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-util-from-random = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-util-serial = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
-mc-util-uri = { git = "https://github.com/mobilecoinfoundation/mobilecoin" }
+mc-account-keys = { path = "mobilecoin/account-keys" }
+#mc-account-keys-slip10 = { path = "mobilecoin/account-keys/slip10" }
+mc-api = { path = "mobilecoin/api" }
+mc-core = { path = "mobilecoin/core" }
+mc-attest-ake = { path = "mobilecoin/attest/ake", default-features = false }
+mc-attest-core = { path = "mobilecoin/attest/core", default-features = false }
+mc-attest-verifier = { path = "mobilecoin/attest/verifier", default-features = false }
+mc-common = { path = "mobilecoin/common" }
+mc-crypto-box = { path = "mobilecoin/crypto/box" }
+mc-crypto-keys = { path = "mobilecoin/crypto/keys" }
+mc-crypto-noise = { path = "mobilecoin/crypto/noise" }
+mc-crypto-rand = { path = "mobilecoin/crypto/rand", features = ["std"] }
+mc-crypto-ring-signature-signer = { path = "mobilecoin/crypto/ring-signature/signer", default-features = false }
+mc-fog-report-types = { path = "mobilecoin/fog/report/types" }
+mc-fog-report-resolver = { path = "mobilecoin/fog/report/resolver" }
+mc-fog-report-validation = { path = "mobilecoin/fog/report/validation" }
+mc-transaction-core = { path = "mobilecoin/transaction/core" }
+mc-transaction-builder = { path = "mobilecoin/transaction/builder" }
+mc-transaction-extra = { path = "mobilecoin/transaction/extra" }
+mc-util-encodings = { path = "mobilecoin/util/encodings" }
+mc-util-from-random = { path = "mobilecoin/util/from-random" }
+mc-util-serial = { path = "mobilecoin/util/serial" }
+mc-util-uri = { path = "mobilecoin/util/uri" }
 
 # third-party
 aes-gcm = { version = "0.9.4", default-features = false }
