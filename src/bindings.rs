@@ -47,7 +47,7 @@ use mc_transaction_core::{
     },
     ring_signature::KeyImage,
     tx::{Tx, TxOut, TxOutMembershipProof},
-    Amount, BlockVersion, CompressedCommitment, MaskedAmountV1, MemoPayload, TokenId,
+    Amount, BlockVersion, CompressedCommitment, MaskedAmountV1, MaskedAmountV2, MemoPayload, TokenId,
 };
 use mc_transaction_builder::{InputCredentials,
     MemoBuilder, RTHMemoBuilder, ReservedSubaddresses,
@@ -307,11 +307,11 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_AttestedClient_decrypt_1payload
 }
 
 /*****************************************************************
- * MaskedAmount
+ * MaskedAmountV1
  */
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_init_1jni(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV1_init_1jni(
     env: JNIEnv,
     obj: JObject,
     commitment: jbyteArray,
@@ -332,7 +332,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_init_1jni(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_init_1jni_1with_1secret(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV1_init_1jni_1with_1secret(
     env: JNIEnv,
     obj: JObject,
     tx_out_shared_secret: JObject,
@@ -354,7 +354,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_init_1jni_1with_1s
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_get_1bytes(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV1_get_1bytes(
     env: JNIEnv,
     obj: JObject,
 ) -> jbyteArray {
@@ -370,7 +370,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_get_1bytes(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_finalize_1jni(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV1_finalize_1jni(
     env: JNIEnv,
     obj: JObject,
 ) {
@@ -381,7 +381,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_finalize_1jni(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_unmask_1amount(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV1_unmask_1amount(
     env: JNIEnv,
     obj: JObject,
     view_key: JObject,
@@ -392,6 +392,132 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmount_unmask_1amount(
         &env,
         |env| {
             let masked_amount: MutexGuard<MaskedAmountV1> =
+                env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let view_key: MutexGuard<RistrettoPrivate> =
+                env.get_rust_field(view_key, RUST_OBJ_FIELD)?;
+            let tx_pub_key: MutexGuard<RistrettoPublic> =
+                env.get_rust_field(tx_pub_key, RUST_OBJ_FIELD)?;
+            let shared_secret = create_shared_secret(&tx_pub_key, &view_key);
+            let (amount, _) = masked_amount.get_value(&shared_secret)?;
+            let value = env.new_object(
+                "java/math/BigInteger",
+                "(I[B)V",
+                &[
+                    jni::objects::JValue::Int(1),
+                    env.byte_array_from_slice(&amount.value.to_be_bytes())?
+                        .into(),
+                ],
+            )?;
+            let token_id_ul = env.new_object(
+                "com/mobilecoin/lib/UnsignedLong",
+                "(J)V",
+                &[jni::objects::JValue::Long(*amount.token_id as i64)],
+            )?;
+            let token_id = env.new_object(
+                "com/mobilecoin/lib/TokenId",
+                "(Lcom/mobilecoin/lib/UnsignedLong;)V",
+                &[jni::objects::JValue::Object(token_id_ul)],
+            )?;
+            Ok(env
+                .new_object(
+                    "com/mobilecoin/lib/Amount",
+                    "(Ljava/math/BigInteger;Lcom/mobilecoin/lib/TokenId;)V",
+                    &[
+                        jni::objects::JValue::Object(value),
+                        jni::objects::JValue::Object(token_id),
+                    ],
+                )?
+                .into_inner())
+        },
+    )
+}
+
+/*****************************************************************
+ * MaskedAmountV2
+ */
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV2_init_1jni(
+    env: JNIEnv,
+    obj: JObject,
+    commitment: jbyteArray,
+    masked_value: jlong,
+    masked_token_id: jbyteArray,
+) {
+    jni_ffi_call(&env, |env| {
+        let commitment_bytes = env.convert_byte_array(commitment)?;
+        let masked_token_id_bytes = env.convert_byte_array(masked_token_id)?;
+
+        let masked_amount = MaskedAmountV2 {
+            commitment: CompressedCommitment::try_from(&commitment_bytes[..])?,
+            masked_value: masked_value as u64,
+            masked_token_id: masked_token_id_bytes,
+        };
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, masked_amount)?)
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV2_init_1jni_1with_1secret(
+    env: JNIEnv,
+    obj: JObject,
+    tx_out_shared_secret: JObject,
+    masked_value: jlong,
+    masked_token_id: jbyteArray,
+) {
+    jni_ffi_call(&env, |env| {
+        let tx_out_shared_secret: MutexGuard<RistrettoPublic> =
+            env.get_rust_field(tx_out_shared_secret, RUST_OBJ_FIELD)?;
+        let masked_token_id_bytes = env.convert_byte_array(masked_token_id)?;
+        let masked_amount = MaskedAmountV2::reconstruct(
+            masked_value as u64,
+            &masked_token_id_bytes,
+            &tx_out_shared_secret,
+        )?;
+
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, masked_amount)?)
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV2_get_1bytes(
+    env: JNIEnv,
+    obj: JObject,
+) -> jbyteArray {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let amount_key: MutexGuard<MaskedAmountV2> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let bytes = mc_util_serial::encode(&*amount_key);
+            Ok(env.byte_array_from_slice(&bytes)?)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV2_finalize_1jni(
+    env: JNIEnv,
+    obj: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let _: MaskedAmountV2 = env.take_rust_field(obj, RUST_OBJ_FIELD)?;
+        Ok(())
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_MaskedAmountV2_unmask_1amount(
+    env: JNIEnv,
+    obj: JObject,
+    view_key: JObject,
+    tx_pub_key: JObject,
+) -> jobject {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let masked_amount: MutexGuard<MaskedAmountV2> =
                 env.get_rust_field(obj, RUST_OBJ_FIELD)?;
             let view_key: MutexGuard<RistrettoPrivate> =
                 env.get_rust_field(view_key, RUST_OBJ_FIELD)?;
@@ -2857,6 +2983,8 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_finalize_
  * SignedContingentInputBuilder
  */
 
+ const MEMBERSHIP_PROOF_RUST_FIELD: &str = "membershipProofsRustObj";
+
  #[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_init_1jni(
     env: JNIEnv,
@@ -2908,6 +3036,13 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_in
             *onetime_private_key,
             *view_private_key,
         )?;
+
+        /*
+        We need to save these proofs and add them to the SCI after it is built.
+        Store the vec in the Java SCI builder and then retrieve them when build() is called
+        We make sure to free this field when finalize() is called
+         */
+        env.set_rust_field(obj, MEMBERSHIP_PROOF_RUST_FIELD, input_credentials.membership_proofs.clone())?;
 
         let sci_builder = SignedContingentInputBuilder::new_with_box(
             block_version,
@@ -3021,7 +3156,9 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_bu
                 env.take_rust_field(obj, RUST_OBJ_FIELD)?;
 
             let mut rng: MutexGuard<ChaCha20Rng> = env.get_rust_field(java_rng, RUST_OBJ_FIELD)?;
-            let sci = sci_builder.build(&NoKeysRingSigner {}, &mut *rng)?;
+            let mut sci = sci_builder.build(&NoKeysRingSigner {}, &mut *rng)?;
+            let membership_proofs: MutexGuard<Vec<TxOutMembershipProof>> = env.get_rust_field(obj, MEMBERSHIP_PROOF_RUST_FIELD)?;
+            sci.tx_in.proofs = membership_proofs.clone();
 
             let mbox = Box::new(Mutex::new(sci));
             let ptr: *mut Mutex<SignedContingentInput> = Box::into_raw(mbox);
@@ -3037,6 +3174,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInputBuilder_fi
     obj: JObject,
 ) {
     jni_ffi_call(&env, |env| {
+        let _: Vec<TxOutMembershipProof> = env.take_rust_field(obj, MEMBERSHIP_PROOF_RUST_FIELD)?;
         let _: SignedContingentInputBuilder<FogResolver> = env.take_rust_field(obj, RUST_OBJ_FIELD)?;
         Ok(())
     })
