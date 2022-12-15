@@ -88,25 +88,10 @@ copy_artifacts:
 	mkdir -p $(JNI_LIBS_PATH)/armeabi-v7a
 	mkdir -p $(JNI_LIBS_PATH)/x86
 	mkdir -p $(JNI_LIBS_PATH)/x86_64
-	mkdir -p build/proto
 	cp -f target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/arm64-v8a/libmobilecoin.so
 	cp -f target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/armeabi-v7a/libmobilecoin.so
 	cp -f target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86/libmobilecoin.so
 	cp -f target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86_64/libmobilecoin.so
-	cp -f mobilecoin/api/proto/blockchain.proto build/proto/
-	cp -f mobilecoin/api/proto/printable.proto build/proto/
-	cp -f mobilecoin/consensus/api/proto/consensus_client.proto build/proto/
-	cp -f mobilecoin/api/proto/external.proto build/proto/
-	cp -f mobilecoin/consensus/api/proto/consensus_common.proto build/proto/
-	cp -f mobilecoin/consensus/api/proto/consensus_peer.proto build/proto/
-	cp -f mobilecoin/attest/api/proto/attest.proto build/proto/
-	cp -f mobilecoin/fog/report/api/proto/report.proto build/proto/
-	cp -f mobilecoin/fog/api/proto/view.proto build/proto/
-	cp -f mobilecoin/fog/api/proto/fog_common.proto build/proto/
-	cp -f mobilecoin/fog/api/proto/kex_rng.proto build/proto/
-	cp -f mobilecoin/fog/api/proto/ledger.proto build/proto/
-	cp -f mobilecoin/fog/api/proto/ingest.proto build/proto/
-	cp -f mobilecoin/fog/api/proto/ingest_common.proto build/proto/
 
 strip:
 	aarch64-linux-android-strip target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so

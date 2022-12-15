@@ -8,10 +8,11 @@ use mc_crypto_box::Error as CryptoBoxError;
 use mc_crypto_keys::KeyError;
 use mc_crypto_noise::CipherError;
 use mc_fog_kex_rng::Error as KexRngError;
+use mc_transaction_builder::{TxBuilderError, SignedContingentInputBuilderError};
 use mc_transaction_core::{
     ring_signature::Error as RingSignatureError, AmountError, MemoError, NewMemoError,
 };
-use mc_transaction_std::TxBuilderError;
+use mc_transaction_extra::SignedContingentInputError;
 use mc_util_encodings::Error as EncodingsError;
 use mc_util_serial::{
     decode::Error as DeserializeError, encode::Error as SerializeError, DecodeError, EncodeError,
@@ -98,6 +99,12 @@ pub enum McError {
 
     /// Retrieving memo data failed: {0}
     MemoData(MemoError),
+
+    /// SignedContingentInputBuilder: {0}
+    SignedContingentInputBuilder(SignedContingentInputBuilderError),
+
+    /// SignedContingentInput: {0}
+    SignedContingentInput(SignedContingentInputError),
 }
 
 impl From<FromUtf8Error> for McError {
@@ -187,6 +194,18 @@ impl From<DeserializeError> for McError {
 impl From<TxBuilderError> for McError {
     fn from(src: TxBuilderError) -> Self {
         Self::TxBuilder(src)
+    }
+}
+
+impl From<SignedContingentInputBuilderError> for McError {
+    fn from(src: SignedContingentInputBuilderError) -> Self {
+        Self::SignedContingentInputBuilder(src)
+    }
+}
+
+impl From<SignedContingentInputError> for McError {
+    fn from(src: SignedContingentInputError) -> Self {
+        Self::SignedContingentInput(src)
     }
 }
 

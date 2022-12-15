@@ -1,0 +1,4 @@
+build
+target
+lib-wrapper/android-bindings/src/main/jniLibs
+.gradle
