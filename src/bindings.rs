@@ -3267,6 +3267,29 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_DefaultVersionedCryptoBox_versi
     )
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_DefaultVersionedCryptoBox_versioned_1crypto_1box_1encrypt(
+    env: JNIEnv,
+    _obj: JObject,
+    key: JObject,
+    plain_text: jbyteArray,
+) -> jbyteArray {
+    jni_ffi_call_or(
+        || Ok(JObject::null().into_inner()),
+        &env,
+        |env| {
+            let key: MutexGuard<RistrettoPublic> = env.get_rust_field(key, RUST_OBJ_FIELD)?;
+            let plain_text = env.convert_byte_array(plain_text)?;
+
+            let encrypted =
+                VersionedCryptoBox::default().encrypt::<McRng>(&mut McRng::default(), &key.to_owned(), &plain_text)
+                .map_err(|_| McError::Other("Error encrypting byte array".to_owned()))?;
+
+            Ok(env.byte_array_from_slice(&encrypted)?)
+        },
+    )
+}
+
 /// A method that converts a BigInteger value to string, used for testing
 /// jni_big_int_to_u64.
 #[no_mangle]
