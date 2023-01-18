@@ -20,7 +20,8 @@ use jni::{
 };
 use mc_account_keys::{
     AccountKey, PublicAddress, RootEntropy, RootIdentity, ShortAddressHash,
-    CHANGE_SUBADDRESS_INDEX, DEFAULT_SUBADDRESS_INDEX, INVALID_SUBADDRESS_INDEX,
+    ViewAccountKey, CHANGE_SUBADDRESS_INDEX, DEFAULT_SUBADDRESS_INDEX,
+    INVALID_SUBADDRESS_INDEX,
 };
 use mc_api::printable::PrintableWrapper;
 use mc_attest_ake::{
@@ -1212,6 +1213,111 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_AccountKey_get_1public_1address
             Ok(ptr as jlong)
         },
     )
+}
+
+/********************************************************************
+ * ViewAccountKey
+ */
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_ViewAccountKey_init_1jni(
+    env: JNIEnv,
+    obj: JObject,
+    view_private_key: JObject,
+    default_subaddress_view_private_key: JObject,
+    spend_public_key: JObject,
+    fog_report_url: JString,
+    fog_authority_spki: jbyteArray,
+    fog_report_id: JString,
+) {
+    jni_ffi_call(&env, |env| {
+        let view_private_key: MutexGuard<RistrettoPrivate> =
+            env.get_rust_field(view_private_key, RUST_OBJ_FIELD)?;
+        let default_subaddress_view_private_key: MutexGuard<RistrettoPrivate> =
+            env.get_rust_field(default_subaddress_view_private_key, RUST_OBJ_FIELD)?;
+        let spend_public_key: MutexGuard<RistrettoPublic> =
+            env.get_rust_field(spend_public_key, RUST_OBJ_FIELD)?;
+        let fog_report_url: String = env.get_string(fog_report_url)?.into();
+        let fog_authority_spki = env.convert_byte_array(fog_authority_spki)?;
+        let fog_report_id: String = env.get_string(fog_report_id)?.into();
+
+        let view_account_key = ViewAccountKey::new_with_fog(
+            &view_private_key,
+            &default_subaddress_view_private_key,
+            &spend_public_key,
+            fog_report_url,
+            fog_report_id,
+            fog_authority_spki,
+        );
+
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, view_account_key)?)
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_ViewAccountKey_get_1default_1subaddress_1view_1key(
+    env: JNIEnv,
+    obj: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let view_account_key: MutexGuard<ViewAccountKey> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+            let view_key = view_account_key.default_subaddress_view_private().to_owned();
+
+            let mbox = Box::new(Mutex::new(view_key));
+            let ptr: *mut Mutex<RistrettoPrivate> = Box::into_raw(mbox);
+            Ok(ptr as jlong)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_ViewAccountKey_get_1view_1key(
+    env: JNIEnv,
+    obj: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let view_account_key: MutexGuard<ViewAccountKey> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+
+            let mbox = Box::new(Mutex::new(*view_account_key.view_private_key()));
+            let ptr: *mut Mutex<RistrettoPrivate> = Box::into_raw(mbox);
+            Ok(ptr as jlong)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_ViewAccountKey_get_1spend_1key(
+    env: JNIEnv,
+    obj: JObject,
+) -> jlong {
+    jni_ffi_call_or(
+        || Ok(0),
+        &env,
+        |env| {
+            let view_account_key: MutexGuard<ViewAccountKey> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+
+            let mbox = Box::new(Mutex::new(*view_account_key.spend_public_key()));
+            let ptr: *mut Mutex<RistrettoPublic> = Box::into_raw(mbox);
+            Ok(ptr as jlong)
+        },
+    )
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_ViewAccountKey_finalize_1jni(
+    env: JNIEnv,
+    obj: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let _: ViewAccountKey = env.take_rust_field(obj, RUST_OBJ_FIELD)?;
+        Ok(())
+    })
 }
 
 /********************************************************************

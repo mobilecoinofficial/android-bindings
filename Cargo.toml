@@ -51,8 +51,11 @@ mc-util-from-random = { path = "mobilecoin/util/from-random" }
 mc-util-serial = { path = "mobilecoin/util/serial" }
 mc-util-uri = { path = "mobilecoin/util/uri" }
 
+ledger-apdu = { path = "ledger-mob/vendor/rs/ledger-apdu" }
+ledger-transport = { path = "ledger-mob/vendor/rs/ledger-transport" }
+
 # third-party
-aes-gcm = { version = "0.9.4", default-features = false }
+aes-gcm = { version = "0.10.0", default-features = false }
 anyhow = "1.0"
 displaydoc = { version = "0.2", default-features = false }
 generic-array = { version = "0.14", features = ["more_lengths", "serde"] }
