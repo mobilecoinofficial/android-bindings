@@ -52,7 +52,7 @@ mc-util-serial = { path = "mobilecoin/util/serial" }
 mc-util-uri = { path = "mobilecoin/util/uri" }
 
 # third-party
-aes-gcm = { version = "0.9.4", default-features = false }
+aes-gcm = { version = "0.10.0", default-features = false }
 anyhow = "1.0"
 displaydoc = { version = "0.2", default-features = false }
 generic-array = { version = "0.14", features = ["more_lengths", "serde"] }
