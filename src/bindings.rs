@@ -2539,6 +2539,29 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1presign
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1presigned_1partial_1fill_1input(
+    env: JNIEnv,
+    obj: JObject,
+    value: JObject,
+    token_id_long: jlong,
+    signed_input: JObject,
+) {
+    jni_ffi_call(&env, |env| {
+        let mut tx_builder: MutexGuard<TransactionBuilder<FogResolver>> =
+            env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+
+        let value = jni_big_int_to_u64(env, value)?;
+        let token_id = TokenId::from(token_id_long as u64);
+
+        let amount = Amount::new(value as u64, token_id);
+
+        let sci: MutexGuard<SignedContingentInput> = env.get_rust_field(signed_input, RUST_OBJ_FIELD)?;
+        tx_builder.add_presigned_partial_fill_input(sci.to_owned(), amount)?;
+        Ok(())
+    })
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TransactionBuilder_add_1output(
     env: JNIEnv,
     obj: JObject,
