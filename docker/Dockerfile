@@ -2,7 +2,10 @@ FROM rust:1.68 AS android-bindings-builder
 USER root
 ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
+    ANDROID_NDK="/usr/local/android-sdk/ndk-bundle" \
     ANDROID_VERSION=31 \
+    CMAKE_ANDROID_API=31 \
+    CMAKE_SYSTEM_VERSION=31 \
     ANDROID_BUILD_TOOLS_VERSION=32.0.0 \
     PATH="$PATH":/usr/local/bin:/usr/local/google-cloud-sdk/bin \
     GCLOUD_URL="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-294.0.0-linux-x86_64.tar.gz"
