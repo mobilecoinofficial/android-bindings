@@ -1,4 +1,4 @@
-FROM rust:1.54 AS android-bindings-builder
+FROM rust:1.68 AS android-bindings-builder
 USER root
 ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
