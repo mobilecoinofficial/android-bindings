@@ -3,6 +3,7 @@ USER root
 ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
     ANDROID_NDK="/usr/local/android-sdk/ndk-bundle" \
+    CMAKE_TOOLCHAIN_FILE="/usr/local/android-sdk/ndk-bundle/build/cmake/android.toolchain.cmake" \
     ANDROID_VERSION=31 \
     CMAKE_ANDROID_API=31 \
     CMAKE_SYSTEM_VERSION=31 \
@@ -21,6 +22,7 @@ RUN apt-get update && apt-get install --yes \
     python \
     python3-pip \
     libclang-dev \
+    libunwind-dev \
     protobuf-compiler
 
 # Download Android SDK
@@ -44,7 +46,7 @@ RUN $ANDROID_HOME/cmdline-tools/tools/bin/sdkmanager --install "build-tools;${AN
 # Add NDK to PATH
 
 ENV NDK_HOME=${ANDROID_HOME}/ndk-bundle
-ENV PATH ${PATH}:${NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin
+ENV PATH ${NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin:${PATH}
 
 RUN mkdir -p /usr/local/cargo/git
 VOLUME ["/usr/local/cargo/git"]

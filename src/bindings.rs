@@ -35,7 +35,7 @@ use mc_common::ResponderId;
 use mc_core::slip10::Slip10KeyGenerator;
 use mc_crypto_box::{CryptoBox, VersionedCryptoBox};
 use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPrivate, RistrettoPublic, X25519};
-use mc_crypto_rand::{McRng, RngCore};
+use mc_rand::{McRng, RngCore};
 use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 use mc_fog_kex_rng::{BufferedRng, KexRngPubkey, NewFromKex, StoredRng, VersionedKexRng};
 use mc_fog_report_resolver::FogResolver;
