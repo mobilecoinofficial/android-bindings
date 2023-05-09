@@ -138,6 +138,12 @@ bash: setup-docker
 		$(DOCKER_BUILDER_IMAGE_TAG) \
 		bash
 
+test:
+	cargo build --target aarch64-linux-android --release
+	cargo build --target i686-linux-android --release
+#cargo build --target armv7-linux-androideabi --release
+#cargo build --target x86_64-linux-android --release
+
 setup-docker: docker_image
 	mkdir -p $(BUILD_DEPS_FOLDER)
 
