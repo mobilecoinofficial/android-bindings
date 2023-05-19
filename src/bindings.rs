@@ -35,7 +35,7 @@ use mc_common::ResponderId;
 use mc_core::slip10::Slip10KeyGenerator;
 use mc_crypto_box::{CryptoBox, VersionedCryptoBox};
 use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPrivate, RistrettoPublic, X25519};
-use mc_crypto_rand::{McRng, RngCore};
+use mc_rand::{McRng, RngCore};
 use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 use mc_fog_kex_rng::{BufferedRng, KexRngPubkey, NewFromKex, StoredRng, VersionedKexRng};
 use mc_fog_report_resolver::FogResolver;
@@ -2067,7 +2067,7 @@ fn get_subaddress_index(
         .get(&subaddress_spk)
         .ok_or_else(|| McError::Other("Subaddress match error".to_owned()))?;
     Ok(subaddress_index.to_owned())
-    
+
 }
 
 #[no_mangle]
@@ -2105,7 +2105,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_TxOut_get_1subaddress_1index(
             let tx_out: MutexGuard<TxOut> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
             let account_key: MutexGuard<AccountKey> =
                 env.get_rust_field(account_key, RUST_OBJ_FIELD)?;
-            
+
             let tx_out_pub_key = RistrettoPublic::try_from(&tx_out.public_key)?;
             let tx_out_target_key = RistrettoPublic::try_from(&tx_out.target_key)?;
 
@@ -2776,7 +2776,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1requ
         || Ok(JObject::null().into_inner()),
         &env,
         |env| {
-            let sci: MutexGuard<SignedContingentInput> = 
+            let sci: MutexGuard<SignedContingentInput> =
                 env.get_rust_field(obj, RUST_OBJ_FIELD)?;
             let required_outputs = &sci.required_output_amounts;
 
@@ -2862,7 +2862,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1pseu
         || Ok(JObject::null().into_inner()),
         &env,
         |env| {
-            let sci: MutexGuard<SignedContingentInput> = 
+            let sci: MutexGuard<SignedContingentInput> =
                 env.get_rust_field(obj, RUST_OBJ_FIELD)?;
             let pseudo_output_amount = &sci.pseudo_output_amount;
 
@@ -2909,7 +2909,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_SignedContingentInput_get_1ring
         || Ok(JObject::null().into_inner()),
         &env,
         |env| {
-            let sci: MutexGuard<SignedContingentInput> = 
+            let sci: MutexGuard<SignedContingentInput> =
                 env.get_rust_field(obj, RUST_OBJ_FIELD)?;
             let ring = &sci.tx_in.ring;
 
@@ -3272,7 +3272,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_OnetimeKeys_create_1tx_1out_1pu
                 env.get_rust_field(tx_out_private_key, RUST_OBJ_FIELD)?;
             let recipient_spend_key: MutexGuard<RistrettoPublic> =
                 env.get_rust_field(recipient_spend_key, RUST_OBJ_FIELD)?;
-            
+
             let key = create_tx_out_public_key(
                 &tx_out_private_key,
                 &recipient_spend_key,

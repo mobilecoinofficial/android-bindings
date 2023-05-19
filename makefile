@@ -27,40 +27,48 @@ setup-rust:
 aarch64-linux-android: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
+	AR=llvm-ar \
+	CFLAGS=-Wno-error=unused-but-set-parameter \
 	CXX=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
 	CC=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
-	CARGO_TARGET_AARCH64_LINUX_ANDROID_AR=aarch64-linux-android-ar \
+	CARGO_TARGET_DIR=target/aarch64 \
 	CMAKE_TARGET_OVERRIDE=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi \
+	AR=llvm-ar \
+	CFLAGS=-Wno-error=unused-but-set-parameter \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
 	CC=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
-	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_AR=arm-linux-android-ar \
+	CARGO_TARGET_DIR=target/armv7 \
 	CMAKE_TARGET_OVERRIDE=armv7a-linux-androideabi$(MIN_API_LEVEL)
 
 i686-linux-android: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/i686-linux-android \
+	AR=llvm-ar \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-parameter" \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
 	CC=i686-linux-android$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_I686_LINUX_ANDROID_LINKER=i686-linux-android$(MIN_API_LEVEL)-clang \
-	CARGO_TARGET_I686_LINUX_ANDROID_AR=i686-linux-android-ar \
+	CARGO_TARGET_DIR=target/i686 \
 	CMAKE_TARGET_OVERRIDE=i686-linux-android$(MIN_API_LEVEL)
 
 x86_64-linux-android: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android \
+	AR=llvm-ar \
+	CFLAGS=-Wno-error=unused-but-set-parameter \
 	CXX=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
 	CC=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
-	CARGO_TARGET_X86_64_LINUX_ANDROID_AR=x86_64-linux-android-ar \
+	CARGO_TARGET_DIR=target/x86_64 \
 	CMAKE_TARGET_OVERRIDE=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)
 
-$(ARCHS): 
+$(ARCHS):
 	$(CARGO_ENV_FLAGS) cargo build \
 		$(CARGO_BUILD_FLAGS) \
 		--target $@
@@ -88,16 +96,16 @@ copy_artifacts:
 	mkdir -p $(JNI_LIBS_PATH)/armeabi-v7a
 	mkdir -p $(JNI_LIBS_PATH)/x86
 	mkdir -p $(JNI_LIBS_PATH)/x86_64
-	cp -f target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/arm64-v8a/libmobilecoin.so
-	cp -f target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/armeabi-v7a/libmobilecoin.so
-	cp -f target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86/libmobilecoin.so
-	cp -f target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86_64/libmobilecoin.so
+	cp -f target/aarch64/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/arm64-v8a/libmobilecoin.so
+	cp -f target/armv7/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/armeabi-v7a/libmobilecoin.so
+	cp -f target/i686/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86/libmobilecoin.so
+	cp -f target/x86_64/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so $(JNI_LIBS_PATH)/x86_64/libmobilecoin.so
 
 strip:
-	aarch64-linux-android-strip target/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
-	arm-linux-androideabi-strip target/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so
-	i686-linux-android-strip target/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
-	x86_64-linux-android-strip target/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
+	llvm-strip target/aarch64/aarch64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
+	llvm-strip target/armv7/armv7-linux-androideabi/$(CARGO_PROFILE)/libmobilecoin_android.so
+	llvm-strip target/i686/i686-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
+	llvm-strip target/x86_64/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
 
 build: setup-docker
 	docker run \

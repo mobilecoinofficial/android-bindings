@@ -1,9 +1,10 @@
-FROM rust:1.54 AS android-bindings-builder
+FROM rust:1.68 AS android-bindings-builder
 USER root
 ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
     ANDROID_VERSION=31 \
     ANDROID_BUILD_TOOLS_VERSION=32.0.0 \
+    NDK_VERSION="25.2.9519653" \
     PATH="$PATH":/usr/local/bin:/usr/local/google-cloud-sdk/bin \
     GCLOUD_URL="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-294.0.0-linux-x86_64.tar.gz"
 
@@ -36,11 +37,10 @@ RUN mkdir "$ANDROID_HOME" .android \
 # Install Android Build Tool and Libraries
 RUN $ANDROID_HOME/cmdline-tools/tools/bin/sdkmanager --install "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" \
     "platforms;android-${ANDROID_VERSION}" \
-    "ndk-bundle"
+    "ndk;$NDK_VERSION"
 
 # Add NDK to PATH
-
-ENV NDK_HOME=${ANDROID_HOME}/ndk-bundle
+ENV NDK_HOME=${ANDROID_HOME}/ndk/$NDK_VERSION
 ENV PATH ${PATH}:${NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin
 
 RUN mkdir -p /usr/local/cargo/git
@@ -51,8 +51,7 @@ COPY rust-toolchain .
 RUN rustup toolchain install $(cat rust-toolchain) \
     && rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android \
     && rustup update \
-    && rustup component add rustfmt \
-    && cargo install sccache
+    && rustup component add rustfmt
 
 # AWS tools (needed by CI)
 RUN pip3 install awscli
