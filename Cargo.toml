@@ -75,8 +75,8 @@ curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dal
 ed25519-dalek = { git = "https://github.com/dalek-cryptography/ed25519-dalek.git", rev = "2931c688eb11341a1145e257bc41d8ecbe36277c" }
 
 # mbedtls patched to allow certificate verification with a profile
-mbedtls = { git = "https://github.com/mobilecoinfoundation/rust-mbedtls.git", rev = "870cb0e59c1567ff5defdc29d83dfefd2ed2e616" }
-mbedtls-sys-auto = { git = "https://github.com/mobilecoinfoundation/rust-mbedtls.git", rev = "870cb0e59c1567ff5defdc29d83dfefd2ed2e616" }
+mbedtls = { git = "https://github.com/mobilecoinfoundation/rust-mbedtls.git", rev = "6d8fe323a3292f87a6bce4b35963d47139a583f9" }
+mbedtls-sys-auto = { git = "https://github.com/mobilecoinfoundation/rust-mbedtls.git", rev = "6d8fe323a3292f87a6bce4b35963d47139a583f9" }
 
 # Fork and rename to use "OG" dalek-cryptography.
 schnorrkel-og = { git = "https://github.com/mobilecoinfoundation/schnorrkel.git", rev = "b76d8c3a50671b08af0874b25b2543d3302d794d" }
