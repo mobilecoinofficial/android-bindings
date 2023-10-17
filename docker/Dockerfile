@@ -5,6 +5,7 @@ ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-809
     ANDROID_VERSION=31 \
     ANDROID_BUILD_TOOLS_VERSION=32.0.0 \
     NDK_VERSION="25.2.9519653" \
+    ANDROID_PLATFORM=21 \
     PATH="$PATH":/usr/local/bin:/usr/local/google-cloud-sdk/bin \
     GCLOUD_URL="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-294.0.0-linux-x86_64.tar.gz"
 
