@@ -1118,11 +1118,12 @@ dependencies = [
 
 [[package]]
 name = "mc-android-bindings"
-version = "2.0.0"
+version = "6.0.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
  "crc",
+ "der",
  "displaydoc",
  "generic-array",
  "jni",
@@ -1131,6 +1132,8 @@ dependencies = [
  "mc-attest-ake",
  "mc-attest-core",
  "mc-attest-verifier",
+ "mc-attest-verifier-types",
+ "mc-attestation-verifier",
  "mc-common",
  "mc-core",
  "mc-crypto-box",
@@ -1142,6 +1145,7 @@ dependencies = [
  "mc-fog-report-types",
  "mc-fog-report-validation",
  "mc-rand",
+ "mc-sgx-dcap-types",
  "mc-transaction-builder",
  "mc-transaction-core",
  "mc-transaction-extra",
@@ -1994,6 +1998,7 @@ dependencies = [
  "prost",
  "serde",
  "serde_cbor",
+ "serde_with",
 ]
 
 [[package]]
@@ -3219,8 +3224,3 @@ dependencies = [
  "syn 1.0.109",
  "synstructure",
 ]
-
-[[patch.unused]]
-name = "x25519-dalek"
-version = "2.0.0-pre.2"
-source = "git+https://github.com/mobilecoinfoundation/x25519-dalek.git?rev=4fbaa3343301c62cfdbc3023c9f485257e6b718a#4fbaa3343301c62cfdbc3023c9f485257e6b718a"

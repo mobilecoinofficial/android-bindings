@@ -1,6 +1,6 @@
 [package]
 name = "mc-android-bindings"
-version = "2.0.0"
+version = "6.0.0"
 authors = ["MobileCoin"]
 edition = "2021"
 license = "GPL-3.0"
@@ -22,6 +22,7 @@ codegen-units = 1
 [dependencies]
 # External dependencies
 crc = "3.0.0"
+der = "0.7.8"
 
 # fog
 mc-fog-kex-rng = { path = "mobilecoin/fog/kex_rng" }
@@ -34,7 +35,9 @@ mc-core = { path = "mobilecoin/core" }
 mc-attest-ake = { path = "mobilecoin/attest/ake", default-features = false }
 mc-attest-core = { path = "mobilecoin/attest/core", default-features = false }
 mc-attest-verifier = { path = "mobilecoin/attest/verifier", default-features = false }
-mc-common = { path = "mobilecoin/common" }
+mc-attest-verifier-types = { path = "mobilecoin/attest/verifier/types", default-features = false }
+mc-attestation-verifier = "0.4.0"
+mc-common = { path = "mobilecoin/common", features = ["std"] }
 mc-crypto-box = { path = "mobilecoin/crypto/box" }
 mc-crypto-keys = { path = "mobilecoin/crypto/keys" }
 mc-crypto-noise = { path = "mobilecoin/crypto/noise" }
@@ -43,6 +46,7 @@ mc-fog-report-types = { path = "mobilecoin/fog/report/types" }
 mc-fog-report-resolver = { path = "mobilecoin/fog/report/resolver" }
 mc-fog-report-validation = { path = "mobilecoin/fog/report/validation" }
 mc-rand = "1.0"
+mc-sgx-dcap-types = "0.8.0"
 mc-transaction-core = { path = "mobilecoin/transaction/core" }
 mc-transaction-builder = { path = "mobilecoin/transaction/builder" }
 mc-transaction-extra = { path = "mobilecoin/transaction/extra" }
@@ -80,6 +84,3 @@ schnorrkel-og = { git = "https://github.com/mobilecoinfoundation/schnorrkel.git"
 # * Allow enabling `serde/std` without also requiring `serde_cbor/std` to be enabled.
 #   See: https://github.com/pyfisch/cbor/pull/198
 serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", rev = "4c886a7c1d523aae1ec4aa7386f402cb2f4341b5" }
-
-# Fix issues with recent nightlies, bump curve25519-dalek version
-x25519-dalek = { git = "https://github.com/mobilecoinfoundation/x25519-dalek.git", rev = "4fbaa3343301c62cfdbc3023c9f485257e6b718a" }
