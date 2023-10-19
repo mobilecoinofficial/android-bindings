@@ -3855,8 +3855,9 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_DcapEvidence_finalize_1jni(
 /********************************************************************
  * FogReport
  */
+
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1jni(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1with_1dcap_1evidence(
     env: JNIEnv,
     obj: JObject,
     report_id: JString,
@@ -3872,6 +3873,27 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1jni(
         let fog_report = Report {
             fog_report_id: report_id,
             attestation_evidence: Some(AttestationEvidence::DcapEvidence(prost_evidence)),
+            pubkey_expiry: pubkey_expiry as u64,
+        };
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, fog_report)?)
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1with_1verification_1report(
+    env: JNIEnv,
+    obj: JObject,
+    report_id: JString,
+    verification_report: JObject,
+    pubkey_expiry: jlong,
+) {
+    jni_ffi_call(&env, |env| {
+        let verification_report: MutexGuard<VerificationReport> =
+            env.get_rust_field(verification_report, RUST_OBJ_FIELD)?;
+        let report_id: String = env.get_string(report_id)?.into();
+        let fog_report = Report {
+            fog_report_id: report_id,
+            attestation_evidence: Some(AttestationEvidence::VerificationReport(verification_report.to_owned())),
             pubkey_expiry: pubkey_expiry as u64,
         };
         Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, fog_report)?)
