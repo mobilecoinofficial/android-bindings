@@ -3769,6 +3769,49 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationSignature_finalize_
 }
 
 /********************************************************************
+ * VerificationReport
+ */
+
+ #[no_mangle]
+ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationReport_init_1jni(
+     env: JNIEnv,
+     obj: JObject,
+     verification_signature: JObject,
+     chain: jobjectArray,
+     http_body: JString,
+ ) {
+     jni_ffi_call(&env, |env| {
+         let verification_signature: MutexGuard<VerificationSignature> =
+             env.get_rust_field(verification_signature, RUST_OBJ_FIELD)?;
+ 
+         let chain = (0..env.get_array_length(chain)?)
+             .map(|index| {
+                 let obj = env.get_object_array_element(chain, index)?;
+                 env.convert_byte_array(obj.into_inner())
+             })
+             .collect::<Result<Vec<Vec<u8>>, jni::errors::Error>>()?;
+         let http_body: String = env.get_string(http_body)?.into();
+         let verification_report = VerificationReport {
+             sig: verification_signature.clone(),
+             chain,
+             http_body,
+         };
+         Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, verification_report)?)
+     })
+ }
+ 
+ #[no_mangle]
+ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationReport_finalize_1jni(
+     env: JNIEnv,
+     obj: JObject,
+ ) {
+     jni_ffi_call(&env, |env| {
+         let _ = env.take_rust_field::<_, _, VerificationReport>(obj, RUST_OBJ_FIELD)?;
+         Ok(())
+     })
+ }
+
+/********************************************************************
  * DcapEvidence
  */
 
