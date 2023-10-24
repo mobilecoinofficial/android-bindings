@@ -36,7 +36,7 @@ mc-attest-ake = { path = "mobilecoin/attest/ake", default-features = false }
 mc-attest-core = { path = "mobilecoin/attest/core", default-features = false }
 mc-attest-verifier = { path = "mobilecoin/attest/verifier", default-features = false }
 mc-attest-verifier-types = { path = "mobilecoin/attest/verifier/types", default-features = false }
-mc-attestation-verifier = "0.4.0"
+mc-attestation-verifier = "0.4.1"
 mc-common = { path = "mobilecoin/common", features = ["std"] }
 mc-crypto-box = { path = "mobilecoin/crypto/box" }
 mc-crypto-keys = { path = "mobilecoin/crypto/keys" }
@@ -46,7 +46,7 @@ mc-fog-report-types = { path = "mobilecoin/fog/report/types" }
 mc-fog-report-resolver = { path = "mobilecoin/fog/report/resolver" }
 mc-fog-report-validation = { path = "mobilecoin/fog/report/validation" }
 mc-rand = "1.0"
-mc-sgx-dcap-types = "0.8.0"
+mc-sgx-dcap-types = "0.9.0"
 mc-transaction-core = { path = "mobilecoin/transaction/core" }
 mc-transaction-builder = { path = "mobilecoin/transaction/builder" }
 mc-transaction-extra = { path = "mobilecoin/transaction/extra" }

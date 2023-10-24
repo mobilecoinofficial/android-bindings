@@ -3812,47 +3812,6 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationSignature_finalize_
  }
 
 /********************************************************************
- * DcapEvidence
- */
-
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_DcapEvidence_init_1jni(
-    env: JNIEnv,
-    obj: JObject,
-    quote: JObject,
-    collateral: JObject,
-    report_data: JObject,
-) {
-    // TODO: is this right?
-    jni_ffi_call(&env, |env| {
-        let quote: MutexGuard<Quote3<Vec<u8>>> =
-            env.get_rust_field(quote, RUST_OBJ_FIELD)?;
-        let collateral: MutexGuard<Collateral> =
-            env.get_rust_field(collateral, RUST_OBJ_FIELD)?;
-        let report_data: MutexGuard<EnclaveReportDataContents> =
-            env.get_rust_field(report_data, RUST_OBJ_FIELD)?;
-
-        let dcap_evidence = DcapEvidence {
-            quote: quote.clone(),
-            collateral: collateral.clone(),
-            report_data: report_data.clone(),
-        };
-        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, dcap_evidence)?)
-    })
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_DcapEvidence_finalize_1jni(
-    env: JNIEnv,
-    obj: JObject,
-) {
-    jni_ffi_call(&env, |env| {
-        let _ = env.take_rust_field::<_, _, DcapEvidence>(obj, RUST_OBJ_FIELD)?;
-        Ok(())
-    })
-}
-
-/********************************************************************
  * FogReport
  */
 
@@ -3861,18 +3820,16 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1with_1dcap_1evi
     env: JNIEnv,
     obj: JObject,
     report_id: JString,
-    dcap_evidence: JObject,
+    dcap_evidence_bytes: jbyteArray,
     pubkey_expiry: jlong,
 ) {
     jni_ffi_call(&env, |env| {
-        let dcap_evidence: MutexGuard<DcapEvidence> =
-            env.get_rust_field(dcap_evidence, RUST_OBJ_FIELD)?;
-        let prost_evidence: prost::DcapEvidence = (&*dcap_evidence).try_into()
-            .map_err(|_| McError::Other("Error converting DcapEvidence to prost type".to_owned()))?;
+        let protobuf_bytes = env.convert_byte_array(dcap_evidence_bytes)?;
+        let prost_dcap_evidence: prost::DcapEvidence = mc_util_serial::decode(&protobuf_bytes)?;
         let report_id: String = env.get_string(report_id)?.into();
         let fog_report = Report {
             fog_report_id: report_id,
-            attestation_evidence: Some(AttestationEvidence::DcapEvidence(prost_evidence)),
+            attestation_evidence: Some(AttestationEvidence::DcapEvidence(prost_dcap_evidence)),
             pubkey_expiry: pubkey_expiry as u64,
         };
         Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, fog_report)?)
