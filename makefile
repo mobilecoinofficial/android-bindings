@@ -28,7 +28,7 @@ aarch64-linux-android: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=documentation" \
 	CXX=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
 	CC=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
@@ -39,7 +39,7 @@ armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable" \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
 	CC=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
@@ -50,7 +50,7 @@ i686-linux-android: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/i686-linux-android \
 	AR=llvm-ar \
-	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-parameter" \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-parameter -Wno-error=unused-but-set-variable" \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
 	CC=i686-linux-android$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_I686_LINUX_ANDROID_LINKER=i686-linux-android$(MIN_API_LEVEL)-clang \
@@ -61,7 +61,7 @@ x86_64-linux-android: CARGO_ENV_FLAGS += \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable" \
 	CXX=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
 	CC=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
