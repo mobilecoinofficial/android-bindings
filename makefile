@@ -16,6 +16,7 @@ CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
 MIN_API_LEVEL = 21
 MIN_API_LEVEL_64_BIT = 21
+ANDROID_PLATFORM=21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
 
 setup-rust:
@@ -25,6 +26,7 @@ setup-rust:
 	rustup update
 
 aarch64-linux-android: CARGO_ENV_FLAGS += \
+	ANDROID_PLATFORM=$(ANDROID_PLATFORM) \
 	LIBCLANG_PATH=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/lib \
 	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
@@ -38,8 +40,8 @@ aarch64-linux-android: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
+	ANDROID_PLATFORM=21 \
 	LIBCLANG_PATH=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/lib \
-	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi \
 	AR=llvm-ar \

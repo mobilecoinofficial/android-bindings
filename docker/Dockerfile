@@ -1,4 +1,4 @@
-FROM rust:1.68 AS android-bindings-builder
+FROM rust:1.73 AS android-bindings-builder
 USER root
 ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
@@ -16,9 +16,10 @@ RUN apt-get update && apt-get install --yes \
     default-jdk \
     file \
     libc6-dev \
-    python \
+    python3 \
     python3-pip \
     libclang-dev \
+    awscli \
     protobuf-compiler
 
 # Download Android SDK
@@ -53,6 +54,3 @@ RUN rustup toolchain install $(cat rust-toolchain) \
     && rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android \
     && rustup update \
     && rustup component add rustfmt
-
-# AWS tools (needed by CI)
-RUN pip3 install awscli
