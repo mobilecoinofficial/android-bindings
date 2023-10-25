@@ -14,7 +14,7 @@ ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-
 DOCKER_BUILDER_IMAGE_TAG = gcr.io/mobilenode-211420/android-bindings-builder:1_4
 CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
-MIN_API_LEVEL = 19
+MIN_API_LEVEL = 21
 MIN_API_LEVEL_64_BIT = 21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
 
@@ -25,6 +25,8 @@ setup-rust:
 	rustup update
 
 aarch64-linux-android: CARGO_ENV_FLAGS += \
+	LIBCLANG_PATH=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/lib \
+	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
 	AR=llvm-ar \
@@ -36,10 +38,12 @@ aarch64-linux-android: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
+	LIBCLANG_PATH=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/lib \
+	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi \
 	AR=llvm-ar \
-	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable" \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=documentation" \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
 	CC=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
@@ -47,10 +51,12 @@ armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=armv7a-linux-androideabi$(MIN_API_LEVEL)
 
 i686-linux-android: CARGO_ENV_FLAGS += \
+	LIBCLANG_PATH=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/lib \
+	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/i686-linux-android \
 	AR=llvm-ar \
-	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-parameter -Wno-error=unused-but-set-variable" \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=documentation" \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
 	CC=i686-linux-android$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_I686_LINUX_ANDROID_LINKER=i686-linux-android$(MIN_API_LEVEL)-clang \
@@ -58,10 +64,12 @@ i686-linux-android: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=i686-linux-android$(MIN_API_LEVEL)
 
 x86_64-linux-android: CARGO_ENV_FLAGS += \
+	LIBCLANG_PATH=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/lib \
+	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
 	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android \
 	AR=llvm-ar \
-	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable" \
+	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-but-set-variable -Wno-error=documentation" \
 	CXX=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
 	CC=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
