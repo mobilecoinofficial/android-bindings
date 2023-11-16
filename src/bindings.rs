@@ -3470,9 +3470,7 @@ struct TrustedIdentities (Vec<TrustedIdentity>);
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_mobilecoin_lib_TrustedIdentities_init_1jni(env: JNIEnv, obj: JObject) {
     jni_ffi_call(&env, |env| {
-        let trusted_identities = TrustedIdentities {
-            0: Vec::new(),
-        };
+        let trusted_identities = TrustedIdentities(Vec::new());
         Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, trusted_identities)?)
     })
 }
