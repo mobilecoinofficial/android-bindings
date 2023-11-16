@@ -28,8 +28,8 @@ use mc_attest_ake::{
     AuthPending, AuthResponseInput, AuthResponseOutput, ClientInitiate, Ready, Start, Transition,
 };
 use mc_attest_core::{
-    DcapEvidence, MrEnclave, MrSigner, ReportData, VerificationReport, VerificationReportData,
-    VerificationSignature, EnclaveReportDataContents,
+    MrEnclave, MrSigner, ReportData, VerificationReport, VerificationReportData,
+    VerificationSignature,
 };
 use mc_attest_verifier_types::prost;
 use mc_attestation_verifier::{TrustedIdentity, TrustedMrEnclaveIdentity, TrustedMrSignerIdentity};
@@ -42,7 +42,6 @@ use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 use mc_fog_kex_rng::{BufferedRng, KexRngPubkey, NewFromKex, StoredRng, VersionedKexRng};
 use mc_fog_report_resolver::FogResolver;
 use mc_fog_report_types::{FogReportResponses, Report, ReportResponse, AttestationEvidence};
-use mc_sgx_dcap_types::{Quote3, Collateral};
 use mc_transaction_core::{
     get_tx_out_shared_secret,
     onetime_keys::{
