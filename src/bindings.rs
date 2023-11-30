@@ -12,6 +12,7 @@ use crate::{
 use aes_gcm::Aes256Gcm;
 use bip39::{Language, Mnemonic};
 use crc::Crc;
+use der::DateTime;
 use generic_array::{typenum::U66, GenericArray};
 use jni::{
     objects::{JObject, JString},
@@ -30,8 +31,9 @@ use mc_attest_core::{
     MrEnclave, MrSigner, ReportData, VerificationReport, VerificationReportData,
     VerificationSignature,
 };
-use mc_attest_verifier::{MrEnclaveVerifier, MrSignerVerifier, Verifier, DEBUG_ENCLAVE};
-use mc_common::ResponderId;
+use mc_attest_verifier_types::prost;
+use mc_attestation_verifier::{TrustedIdentity, TrustedMrEnclaveIdentity, TrustedMrSignerIdentity};
+use mc_common::{ResponderId, time::{SystemTimeProvider, TimeProvider}};
 use mc_core::slip10::Slip10KeyGenerator;
 use mc_crypto_box::{CryptoBox, VersionedCryptoBox};
 use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPrivate, RistrettoPublic, X25519};
@@ -39,7 +41,7 @@ use mc_rand::{McRng, RngCore};
 use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 use mc_fog_kex_rng::{BufferedRng, KexRngPubkey, NewFromKex, StoredRng, VersionedKexRng};
 use mc_fog_report_resolver::FogResolver;
-use mc_fog_report_types::{FogReportResponses, Report, ReportResponse};
+use mc_fog_report_types::{FogReportResponses, Report, ReportResponse, AttestationEvidence};
 use mc_transaction_core::{
     get_tx_out_shared_secret,
     onetime_keys::{
@@ -166,7 +168,6 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_RistrettoPrivate_get_1public(
 /****************************************************************
  * AttestedClient
  */
-
 enum AttestedClientState {
     Pending(AuthPending<X25519, Aes256Gcm, Sha512>),
     Ready(Ready<Aes256Gcm>),
@@ -237,7 +238,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_AttestedClient_attest_1finish(
     env: JNIEnv,
     obj: JObject,
     auth_response: jbyteArray,
-    verifier: JObject,
+    trusted_identities: JObject,
 ) {
     jni_ffi_call(&env, |env| {
         let mut csprng = McRng::default();
@@ -247,11 +248,16 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_AttestedClient_attest_1finish(
             AuthResponseOutput::from(rust_bytes)
         };
 
-        let verifier: MutexGuard<Verifier> = env.get_rust_field(verifier, RUST_OBJ_FIELD)?;
+        let trusted_identities: MutexGuard<TrustedIdentities> = env.get_rust_field(trusted_identities, RUST_OBJ_FIELD)?;
+        let epoch_time = SystemTimeProvider::default()
+            .since_epoch()
+            .map_err(|_| McError::Other("Time went backwards".to_owned()))?;
+        let time = DateTime::from_unix_duration(epoch_time)
+            .map_err(|_| McError::Other("Time out of range".to_owned()))?;
         match state {
             AttestedClientState::Pending(pending) => {
                 let auth_response_input =
-                    AuthResponseInput::new(auth_response_msg, verifier.clone());
+                    AuthResponseInput::new(auth_response_msg, trusted_identities.0.clone(), time);
                 let (ready, _) = pending.try_next(&mut csprng, auth_response_input)?;
                 Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, AttestedClientState::Ready(ready))?)
             }
@@ -3456,99 +3462,121 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_ResponderId_finalize_1jni(
 }
 
 /********************************************************************
- * Attestation Verifier
+ * TrustedIdentity
  */
 
+struct TrustedIdentities (Vec<TrustedIdentity>);
+
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_Verifier_init_1jni(env: JNIEnv, obj: JObject) {
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TrustedIdentities_init_1jni(env: JNIEnv, obj: JObject) {
     jni_ffi_call(&env, |env| {
-        let mut verifier = Verifier::default();
-        verifier.debug(DEBUG_ENCLAVE);
-        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, verifier)?)
+        let trusted_identities = TrustedIdentities(Vec::new());
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, trusted_identities)?)
     })
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_Verifier_add_1mr_1signer(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TrustedIdentities_add_1mr_1signer_1identity(
     env: JNIEnv,
     obj: JObject,
     mr_signer: jbyteArray,
     product_id: jshort,
     security_version: jshort,
-    config_advisories: jobjectArray,
-    hardening_advisories: jobjectArray,
+    java_config_advisories: jobjectArray,
+    java_hardening_advisories: jobjectArray,
 ) {
     jni_ffi_call(&env, |env| {
         let mr_signer_bytes = <[u8; 32]>::try_from(&env.convert_byte_array(mr_signer)?[..])?;
         let mr_signer = MrSigner::from(mr_signer_bytes);
-        let mut mr_signer_verifier =
-            MrSignerVerifier::new(mr_signer, product_id as u16, security_version as u16);
 
-        let config_advisories_num = env.get_array_length(config_advisories)?;
+        let mut config_advisories = Vec::new();
+        let mut hardening_advisories = Vec::new();
+
+        let config_advisories_num = env.get_array_length(java_config_advisories)?;
         for i in 0..config_advisories_num {
             let config_advisory: JString = env
-                .get_object_array_element(config_advisories, i as i32)?
+                .get_object_array_element(java_config_advisories, i as i32)?
                 .into();
             let config_advisory_string: String = env.get_string(config_advisory)?.into();
-            mr_signer_verifier.allow_config_advisory(&config_advisory_string);
+            config_advisories.push(config_advisory_string);
         }
 
-        let hardening_advisories_num = env.get_array_length(hardening_advisories)?;
+        let hardening_advisories_num = env.get_array_length(java_hardening_advisories)?;
         for i in 0..hardening_advisories_num {
             let hardening_advisory: JString = env
-                .get_object_array_element(hardening_advisories, i as i32)?
+                .get_object_array_element(java_hardening_advisories, i as i32)?
                 .into();
             let hardening_advisory_string: String = env.get_string(hardening_advisory)?.into();
-            mr_signer_verifier.allow_hardening_advisory(&hardening_advisory_string);
+            hardening_advisories.push(hardening_advisory_string);
         }
 
-        let mut verifier: MutexGuard<Verifier> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
-        verifier.mr_signer(mr_signer_verifier);
+        let trusted_mr_signer_identity = TrustedMrSignerIdentity::new(
+            mr_signer,
+            (product_id as u16).into(),
+            (security_version as u16).into(),
+            &config_advisories,
+            &hardening_advisories,
+        );
+        let trusted_identity = TrustedIdentity::MrSigner(trusted_mr_signer_identity);
+
+        let mut trusted_identities: MutexGuard<TrustedIdentities> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+        trusted_identities.0.push(trusted_identity);
+
         Ok(())
     })
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_Verifier_add_1mr_1enclave(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TrustedIdentities_add_1mr_1enclave_1identity(
     env: JNIEnv,
     obj: JObject,
     mr_enclave: jbyteArray,
-    config_advisories: jobjectArray,
-    hardening_advisories: jobjectArray,
+    java_config_advisories: jobjectArray,
+    java_hardening_advisories: jobjectArray,
 ) {
     jni_ffi_call(&env, |env| {
         let mr_enclave_bytes = <[u8; 32]>::try_from(&env.convert_byte_array(mr_enclave)?[..])?;
         let mr_enclave = MrEnclave::from(mr_enclave_bytes);
-        let mut mr_enclave_verifier = MrEnclaveVerifier::new(mr_enclave);
 
-        let config_advisories_num = env.get_array_length(config_advisories)?;
+        let mut config_advisories = Vec::new();
+        let mut hardening_advisories = Vec::new();
+
+        let config_advisories_num = env.get_array_length(java_config_advisories)?;
         for i in 0..config_advisories_num {
             let config_advisory: JString = env
-                .get_object_array_element(config_advisories, i as i32)?
+                .get_object_array_element(java_config_advisories, i as i32)?
                 .into();
             let config_advisory_string: String = env.get_string(config_advisory)?.into();
-            mr_enclave_verifier.allow_config_advisory(&config_advisory_string);
+            config_advisories.push(config_advisory_string);
         }
 
-        let hardening_advisories_num = env.get_array_length(hardening_advisories)?;
+        let hardening_advisories_num = env.get_array_length(java_hardening_advisories)?;
         for i in 0..hardening_advisories_num {
             let hardening_advisory: JString = env
-                .get_object_array_element(hardening_advisories, i as i32)?
+                .get_object_array_element(java_hardening_advisories, i as i32)?
                 .into();
             let hardening_advisory_string: String = env.get_string(hardening_advisory)?.into();
-            mr_enclave_verifier.allow_hardening_advisory(&hardening_advisory_string);
+            hardening_advisories.push(hardening_advisory_string);
         }
 
-        let mut verifier: MutexGuard<Verifier> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
-        verifier.mr_enclave(mr_enclave_verifier);
+        let trusted_mr_enclave_identity = TrustedMrEnclaveIdentity::new(
+            mr_enclave,
+            &config_advisories,
+            &hardening_advisories,
+        );
+        let trusted_identity = TrustedIdentity::MrEnclave(trusted_mr_enclave_identity);
+
+        let mut trusted_identities: MutexGuard<TrustedIdentities> = env.get_rust_field(obj, RUST_OBJ_FIELD)?;
+        trusted_identities.0.push(trusted_identity);
+
         Ok(())
     })
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_Verifier_finalize_1jni(env: JNIEnv, obj: JObject) {
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_TrustedIdentities_finalize_1jni(env: JNIEnv, obj: JObject) {
     jni_ffi_call(&env, |env| {
-        let _ = env.take_rust_field::<_, _, Verifier>(obj, RUST_OBJ_FIELD)?;
+        let _ = env.take_rust_field::<_, _, TrustedIdentities>(obj, RUST_OBJ_FIELD)?;
         Ok(())
     })
 }
@@ -3562,13 +3590,13 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogResolver_init_1jni(
     env: JNIEnv,
     obj: JObject,
     report_responses: JObject,
-    verifier: JObject,
+    trusted_identities: JObject,
 ) {
     jni_ffi_call(&env, |env| {
         let report_responses: MutexGuard<FogReportResponses> =
             env.get_rust_field(report_responses, RUST_OBJ_FIELD)?;
-        let verifier: MutexGuard<Verifier> = env.get_rust_field(verifier, RUST_OBJ_FIELD)?;
-        let fog_resolver = FogResolver::new(report_responses.clone(), &verifier)?;
+        let trusted_identities: MutexGuard<TrustedIdentities> = env.get_rust_field(trusted_identities, RUST_OBJ_FIELD)?;
+        let fog_resolver = FogResolver::new(report_responses.clone(), &trusted_identities.0)?;
         Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, fog_resolver)?)
     })
 }
@@ -3741,51 +3769,72 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationSignature_finalize_
  * VerificationReport
  */
 
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationReport_init_1jni(
-    env: JNIEnv,
-    obj: JObject,
-    verification_signature: JObject,
-    chain: jobjectArray,
-    http_body: JString,
-) {
-    jni_ffi_call(&env, |env| {
-        let verification_signature: MutexGuard<VerificationSignature> =
-            env.get_rust_field(verification_signature, RUST_OBJ_FIELD)?;
-
-        let chain = (0..env.get_array_length(chain)?)
-            .map(|index| {
-                let obj = env.get_object_array_element(chain, index)?;
-                env.convert_byte_array(obj.into_inner())
-            })
-            .collect::<Result<Vec<Vec<u8>>, jni::errors::Error>>()?;
-        let http_body: String = env.get_string(http_body)?.into();
-        let verification_report = VerificationReport {
-            sig: verification_signature.clone(),
-            chain,
-            http_body,
-        };
-        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, verification_report)?)
-    })
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationReport_finalize_1jni(
-    env: JNIEnv,
-    obj: JObject,
-) {
-    jni_ffi_call(&env, |env| {
-        let _ = env.take_rust_field::<_, _, VerificationReport>(obj, RUST_OBJ_FIELD)?;
-        Ok(())
-    })
-}
+ #[no_mangle]
+ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationReport_init_1jni(
+     env: JNIEnv,
+     obj: JObject,
+     verification_signature: JObject,
+     chain: jobjectArray,
+     http_body: JString,
+ ) {
+     jni_ffi_call(&env, |env| {
+         let verification_signature: MutexGuard<VerificationSignature> =
+             env.get_rust_field(verification_signature, RUST_OBJ_FIELD)?;
+ 
+         let chain = (0..env.get_array_length(chain)?)
+             .map(|index| {
+                 let obj = env.get_object_array_element(chain, index)?;
+                 env.convert_byte_array(obj.into_inner())
+             })
+             .collect::<Result<Vec<Vec<u8>>, jni::errors::Error>>()?;
+         let http_body: String = env.get_string(http_body)?.into();
+         let verification_report = VerificationReport {
+             sig: verification_signature.clone(),
+             chain,
+             http_body,
+         };
+         Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, verification_report)?)
+     })
+ }
+ 
+ #[no_mangle]
+ pub unsafe extern "C" fn Java_com_mobilecoin_lib_VerificationReport_finalize_1jni(
+     env: JNIEnv,
+     obj: JObject,
+ ) {
+     jni_ffi_call(&env, |env| {
+         let _ = env.take_rust_field::<_, _, VerificationReport>(obj, RUST_OBJ_FIELD)?;
+         Ok(())
+     })
+ }
 
 /********************************************************************
- * Report
+ * FogReport
  */
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_Report_init_1jni(
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1with_1dcap_1evidence(
+    env: JNIEnv,
+    obj: JObject,
+    report_id: JString,
+    dcap_evidence_bytes: jbyteArray,
+    pubkey_expiry: jlong,
+) {
+    jni_ffi_call(&env, |env| {
+        let protobuf_bytes = env.convert_byte_array(dcap_evidence_bytes)?;
+        let prost_dcap_evidence: prost::DcapEvidence = mc_util_serial::decode(&protobuf_bytes)?;
+        let report_id: String = env.get_string(report_id)?.into();
+        let fog_report = Report {
+            fog_report_id: report_id,
+            attestation_evidence: Some(AttestationEvidence::DcapEvidence(prost_dcap_evidence)),
+            pubkey_expiry: pubkey_expiry as u64,
+        };
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, fog_report)?)
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1with_1verification_1report(
     env: JNIEnv,
     obj: JObject,
     report_id: JString,
@@ -3796,12 +3845,12 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_Report_init_1jni(
         let verification_report: MutexGuard<VerificationReport> =
             env.get_rust_field(verification_report, RUST_OBJ_FIELD)?;
         let report_id: String = env.get_string(report_id)?.into();
-        let report = Report {
+        let fog_report = Report {
             fog_report_id: report_id,
-            report: verification_report.clone(),
+            attestation_evidence: Some(AttestationEvidence::VerificationReport(verification_report.to_owned())),
             pubkey_expiry: pubkey_expiry as u64,
         };
-        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, report)?)
+        Ok(env.set_rust_field(obj, RUST_OBJ_FIELD, fog_report)?)
     })
 }
 

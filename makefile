@@ -7,7 +7,7 @@ pwd=$(shell pwd)
 default: build
 
 export SGX_MODE ?= HW
-export IAS_MODE ?= DEV
+export IAS_MODE ?= PROD
 
 CARGO_PROFILE ?= mobile
 ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
