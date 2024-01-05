@@ -3855,7 +3855,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_init_1with_1verificat
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_mobilecoin_lib_Report_finalize_1jni(env: JNIEnv, obj: JObject) {
+pub unsafe extern "C" fn Java_com_mobilecoin_lib_FogReport_finalize_1jni(env: JNIEnv, obj: JObject) {
     jni_ffi_call(&env, |env| {
         let _ = env.take_rust_field::<_, _, Report>(obj, RUST_OBJ_FIELD)?;
         Ok(())
