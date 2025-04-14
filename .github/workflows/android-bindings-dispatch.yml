@@ -6,6 +6,7 @@ on:
 jobs:
   build_publish:
     runs-on: mco-dev-small-x64
+    container: mobilecoin/rust-base:v24.4.0
 
     steps:
       - name: Checkout
