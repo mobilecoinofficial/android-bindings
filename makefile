@@ -11,7 +11,7 @@ export IAS_MODE ?= PROD
 
 CARGO_PROFILE ?= mobile
 ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-DOCKER_BUILDER_IMAGE_TAG = gcr.io/mobilenode-211420/android-bindings-builder:1_4
+DOCKER_BUILDER_IMAGE_TAG = test-ben
 CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
 MIN_API_LEVEL = 19
@@ -84,6 +84,7 @@ publish: libs
 
 ci: setup-docker
 	docker run \
+        --platform linux/amd64 \
 		--rm \
 		-e MAVEN_USER \
 		-e MAVEN_PASSWORD \
@@ -111,6 +112,7 @@ strip:
 
 build: setup-docker
 	docker run \
+        --platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -123,6 +125,7 @@ dist: build
 
 docker_image:
 	docker build \
+        --platform linux/amd64 \
 		-t $(DOCKER_BUILDER_IMAGE_TAG) \
 		docker
 
@@ -131,6 +134,7 @@ publish_docker_image: docker_image
 
 clean:
 	docker run \
+        --platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -140,6 +144,7 @@ clean:
 
 bash: setup-docker
 	docker run \
+        --platform linux/amd64 \
 		--rm \
 		-it \
 		-v $(pwd):/home/rust/ \
