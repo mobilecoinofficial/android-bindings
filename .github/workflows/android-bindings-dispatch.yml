@@ -6,7 +6,16 @@ on:
 jobs:
   build_publish:
     runs-on: mco-dev-small-x64
-    container: mobilecoin/rust-base:v24.4.0
+    container:
+      image: gcr.io/mobilenode-211420/android-bindings-builder:1_4
+      env:
+        MAVEN_USER: ${{ secrets.MAVEN_USER }}
+        MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+      volumes:
+        - ./:/home/rust
+        - /tmp/build/deps/:/usr/local/cargo/git
+      options:
+        -w /home/rust
 
     steps:
       - name: Checkout
@@ -15,10 +24,7 @@ jobs:
           submodules: 'true'
           fetch-depth: 10
       - name: Build and Publish Bindings
-        env:
-          MAVEN_USER: ${{ secrets.MAVEN_USER }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
         working-directory: ./
         run: |
-          make ci
+          make publish
 
