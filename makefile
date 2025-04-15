@@ -19,7 +19,8 @@ MIN_API_LEVEL_64_BIT = 21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
 
 setup-rust:
-	rustup toolchain install $(file < mobilecoin/rust-toolchain)
+	rustup toolchain install nightly-2023-10-01
+	rustup override set nightly-2023-10-01
 	rustup component add rustfmt
 	rustup target add $(ARCHS)
 	rustup update
