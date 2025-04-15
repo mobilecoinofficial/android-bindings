@@ -1,3 +1,5 @@
+cargo-features = ["edition2021", "named-profiles"]
+
 [package]
 name = "mc-android-bindings"
 version = "6.0.2"
