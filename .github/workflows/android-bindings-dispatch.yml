@@ -7,7 +7,7 @@ jobs:
   build_publish:
     runs-on: mco-dev-small-x64
     container:
-      image: gcr.io/mobilenode-211420/android-bindings-builder:1_4
+      image: rust:1.68
       env:
         MAVEN_USER: ${{ secrets.MAVEN_USER }}
         MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
