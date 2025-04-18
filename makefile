@@ -102,6 +102,7 @@ strip:
 
 build: setup-docker
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -114,6 +115,7 @@ dist: build
 
 docker_image:
 	docker build \
+		--platform linux/amd64 \
 		-t $(DOCKER_BUILDER_IMAGE_TAG) \
 		docker
 
@@ -122,6 +124,7 @@ publish_docker_image: docker_image
 
 clean:
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -131,6 +134,7 @@ clean:
 
 bash: setup-docker
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-it \
 		-v $(pwd):/home/rust/ \
