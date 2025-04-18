@@ -26,7 +26,7 @@ setup-rust:
 	rustup update
 
 aarch64-linux-android: CARGO_ENV_FLAGS += \
-	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/aarch64-linux-android -target aarch64-linux-android$(MIN_API_LEVEL)" \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/aarch64-linux-android -target aarch64-linux-android$(MIN_API_LEVEL) -m64" \
 	AR=llvm-ar \
 	CFLAGS=$(CFLAGS) \
 	CXX=aarch64-linux-android$(MIN_API_LEVEL)-clang++ \
@@ -35,7 +35,7 @@ aarch64-linux-android: CARGO_ENV_FLAGS += \
 	CARGO_TARGET_DIR=target/aarch64
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
-	BINDGEN_EXTRA_CLANG_ARGS="-m32 --sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/arm-linux-androideabi -target armv7a-linux-androideabi$(MIN_API_LEVEL)" \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/arm-linux-androideabi -target armv7a-linux-androideabi$(MIN_API_LEVEL) -m32" \
 	AR=llvm-ar \
 	CFLAGS=$(CFLAGS) \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
@@ -44,7 +44,7 @@ armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	CARGO_TARGET_DIR=target/armv7
 
 i686-linux-android: CARGO_ENV_FLAGS += \
-	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/i686-linux-android -target i686-linux-android$(MIN_API_LEVEL)" \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/i686-linux-android -target i686-linux-android$(MIN_API_LEVEL) -m32" \
 	AR=llvm-ar \
 	CFLAGS=$(CFLAGS) \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
@@ -53,7 +53,7 @@ i686-linux-android: CARGO_ENV_FLAGS += \
 	CARGO_TARGET_DIR=target/i686
 
 x86_64-linux-android: CARGO_ENV_FLAGS += \
-	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/x86_64-linux-android -target x86_64-linux-android$(MIN_API_LEVEL)" \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/x86_64-linux-android -target x86_64-linux-android$(MIN_API_LEVEL) -m64" \
 	AR=llvm-ar \
 	CFLAGS=$(CFLAGS) \
 	CXX=x86_64-linux-android$(MIN_API_LEVEL)-clang++ \
