@@ -1,4 +1,4 @@
-FROM rust:1.68 AS android-bindings-builder
+FROM rust:1.83 AS android-bindings-builder
 USER root
 ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install --yes \
     default-jdk \
     file \
     libc6-dev \
-    python \
-    python3-pip \
+    python3 \
+    pipx \
     libclang-dev \
     protobuf-compiler
 
@@ -41,7 +41,7 @@ RUN $ANDROID_HOME/cmdline-tools/tools/bin/sdkmanager --install "build-tools;${AN
 
 # Add NDK to PATH
 ENV NDK_HOME=${ANDROID_HOME}/ndk/$NDK_VERSION
-ENV PATH ${PATH}:${NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin
+ENV PATH=${PATH}:${NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin
 
 RUN mkdir -p /usr/local/cargo/git
 VOLUME ["/usr/local/cargo/git"]
@@ -54,4 +54,4 @@ RUN rustup toolchain install $(cat rust-toolchain) \
     && rustup component add rustfmt
 
 # AWS tools (needed by CI)
-RUN pip3 install awscli
+RUN pipx install awscli
