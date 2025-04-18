@@ -14,8 +14,7 @@ ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-
 DOCKER_BUILDER_IMAGE_TAG = gcr.io/mobilenode-211420/android-bindings-builder:1_4
 CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
-MIN_API_LEVEL = 19
-MIN_API_LEVEL_64_BIT = 21
+MIN_API_LEVEL = 21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
 CFLAGS="-Wno-error=unused-but-set-variable -Wno-error=documentation"
 SYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot
@@ -30,6 +29,10 @@ aarch64-linux-android: CARGO_ENV_FLAGS += \
 	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/aarch64-linux-android -target aarch64-linux-android$(MIN_API_LEVEL)" \
 	AR=llvm-ar \
 	CFLAGS=$(CFLAGS) \
+	CXX=aarch64-linux-android$(MIN_API_LEVEL)-clang++ \
+	CC=aarch64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_DIR=target/aarch64
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/arm-linux-androideabi -target armv7a-linux-androideabi$(MIN_API_LEVEL)" \
@@ -38,8 +41,7 @@ armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
 	CC=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
-	CARGO_TARGET_DIR=target/armv7 \
-	CMAKE_TARGET_OVERRIDE=armv7a-linux-androideabi$(MIN_API_LEVEL)
+	CARGO_TARGET_DIR=target/armv7
 
 i686-linux-android: CARGO_ENV_FLAGS += \
 	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/i686-linux-android -target i686-linux-android$(MIN_API_LEVEL)" \
@@ -48,13 +50,16 @@ i686-linux-android: CARGO_ENV_FLAGS += \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
 	CC=i686-linux-android$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_I686_LINUX_ANDROID_LINKER=i686-linux-android$(MIN_API_LEVEL)-clang \
-	CARGO_TARGET_DIR=target/i686 \
-	CMAKE_TARGET_OVERRIDE=i686-linux-android$(MIN_API_LEVEL)
+	CARGO_TARGET_DIR=target/i686
 
 x86_64-linux-android: CARGO_ENV_FLAGS += \
 	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/x86_64-linux-android -target x86_64-linux-android$(MIN_API_LEVEL)" \
 	AR=llvm-ar \
 	CFLAGS=$(CFLAGS) \
+	CXX=x86_64-linux-android$(MIN_API_LEVEL)-clang++ \
+	CC=x86_64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_DIR=target/x86_64
 
 $(ARCHS):
 	$(CARGO_ENV_FLAGS) cargo build \
