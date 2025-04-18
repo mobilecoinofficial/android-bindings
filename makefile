@@ -11,28 +11,29 @@ export IAS_MODE ?= PROD
 
 CARGO_PROFILE ?= mobile
 ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-DOCKER_BUILDER_IMAGE_TAG = gcr.io/mobilenode-211420/android-bindings-builder:1_4
+DOCKER_BUILDER_IMAGE_TAG = ben-test-26
 CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
 MIN_API_LEVEL = 19
-MIN_API_LEVEL_64_BIT = 21
+MIN_API_LEVEL_64_BIT = 24
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
 
 setup-rust:
-	rustup toolchain install $(file < mobilecoin/rust-toolchain)
+	rustup toolchain install nightly-2025-03-18
+	rustup override set nightly-2025-03-18
 	rustup component add rustfmt
 	rustup target add $(ARCHS)
 	rustup update
 
 aarch64-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
+    BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot -isystem $(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android" \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
+	CFLAGS="-w -Wno-error=unused-but-set-variable -Wno-error=documentation" \
 	CXX=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
 	CC=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
 	CARGO_TARGET_DIR=target/aarch64 \
+	CMAKE_TOOLCHAIN_FILE=$(NDK_HOME)/build/cmake/android.toolchain.cmake \
 	CMAKE_TARGET_OVERRIDE=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
@@ -109,6 +110,7 @@ strip:
 
 build: setup-docker
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -121,6 +123,7 @@ dist: build
 
 docker_image:
 	docker build \
+		--platform linux/amd64 \
 		-t $(DOCKER_BUILDER_IMAGE_TAG) \
 		docker
 
