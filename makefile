@@ -14,9 +14,10 @@ ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-
 DOCKER_BUILDER_IMAGE_TAG = gcr.io/mobilenode-211420/android-bindings-builder:1_4
 CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
-MIN_API_LEVEL = 19
-MIN_API_LEVEL_64_BIT = 21
+MIN_API_LEVEL = 21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
+CFLAGS="-Wno-error=unused-but-set-variable -Wno-error=documentation"
+SYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot
 
 setup-rust:
 	rustup toolchain install $(file < mobilecoin/rust-toolchain)
@@ -25,48 +26,40 @@ setup-rust:
 	rustup update
 
 aarch64-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/aarch64-linux-android -target aarch64-linux-android$(MIN_API_LEVEL) -m64" \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
-	CXX=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
-	CC=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
-	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
-	CARGO_TARGET_DIR=target/aarch64 \
-	CMAKE_TARGET_OVERRIDE=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)
+	CFLAGS=$(CFLAGS) \
+	CXX=aarch64-linux-android$(MIN_API_LEVEL)-clang++ \
+	CC=aarch64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_DIR=target/aarch64
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/arm-linux-androideabi -target armv7a-linux-androideabi$(MIN_API_LEVEL) -m32" \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
+	CFLAGS=$(CFLAGS) \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
 	CC=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang \
-	CARGO_TARGET_DIR=target/armv7 \
-	CMAKE_TARGET_OVERRIDE=armv7a-linux-androideabi$(MIN_API_LEVEL)
+	CARGO_TARGET_DIR=target/armv7
 
 i686-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/i686-linux-android \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/i686-linux-android -target i686-linux-android$(MIN_API_LEVEL) -m32" \
 	AR=llvm-ar \
-	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-parameter" \
+	CFLAGS=$(CFLAGS) \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
 	CC=i686-linux-android$(MIN_API_LEVEL)-clang \
 	CARGO_TARGET_I686_LINUX_ANDROID_LINKER=i686-linux-android$(MIN_API_LEVEL)-clang \
-	CARGO_TARGET_DIR=target/i686 \
-	CMAKE_TARGET_OVERRIDE=i686-linux-android$(MIN_API_LEVEL)
+	CARGO_TARGET_DIR=target/i686
 
 x86_64-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/x86_64-linux-android -target x86_64-linux-android$(MIN_API_LEVEL) -m64" \
 	AR=llvm-ar \
-	CFLAGS=-Wno-error=unused-but-set-parameter \
-	CXX=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
-	CC=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
-	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang \
-	CARGO_TARGET_DIR=target/x86_64 \
-	CMAKE_TARGET_OVERRIDE=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)
+	CFLAGS=$(CFLAGS) \
+	CXX=x86_64-linux-android$(MIN_API_LEVEL)-clang++ \
+	CC=x86_64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android$(MIN_API_LEVEL)-clang \
+	CARGO_TARGET_DIR=target/x86_64
 
 $(ARCHS):
 	$(CARGO_ENV_FLAGS) cargo build \
@@ -109,6 +102,7 @@ strip:
 
 build: setup-docker
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -121,6 +115,7 @@ dist: build
 
 docker_image:
 	docker build \
+		--platform linux/amd64 \
 		-t $(DOCKER_BUILDER_IMAGE_TAG) \
 		docker
 
@@ -129,6 +124,7 @@ publish_docker_image: docker_image
 
 clean:
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -138,6 +134,7 @@ clean:
 
 bash: setup-docker
 	docker run \
+		--platform linux/amd64 \
 		--rm \
 		-it \
 		-v $(pwd):/home/rust/ \
