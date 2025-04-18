@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install --yes \
     file \
     openjdk-17-jdk \
     libc6-dev \
-    python \
+    python3 \
     python3-pip \
     libclang-dev \
     protobuf-compiler
