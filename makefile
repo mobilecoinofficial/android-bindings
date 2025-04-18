@@ -17,6 +17,7 @@ BUILD_DEPS_FOLDER = /tmp/build/deps/
 MIN_API_LEVEL = 19
 MIN_API_LEVEL_64_BIT = 21
 JNI_LIBS_PATH = lib-wrapper/android-bindings/src/main/jniLibs
+SYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot
 
 setup-rust:
 	rustup toolchain install $(file < mobilecoin/rust-toolchain)
@@ -25,8 +26,7 @@ setup-rust:
 	rustup update
 
 aarch64-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/aarch64-linux-android -target aarch64-linux-android$(MIN_API_LEVEL)" \
 	AR=llvm-ar \
 	CFLAGS=-Wno-error=unused-but-set-parameter \
 	CXX=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
@@ -36,8 +36,7 @@ aarch64-linux-android: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=aarch64-linux-android$(MIN_API_LEVEL_64_BIT)
 
 armv7-linux-androideabi: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/arm-linux-androideabi \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/arm-linux-androideabi -target armv7a-linux-androideabi$(MIN_API_LEVEL)" \
 	AR=llvm-ar \
 	CFLAGS=-Wno-error=unused-but-set-parameter \
 	CXX=armv7a-linux-androideabi$(MIN_API_LEVEL)-clang++ \
@@ -47,8 +46,7 @@ armv7-linux-androideabi: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=armv7a-linux-androideabi$(MIN_API_LEVEL)
 
 i686-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/i686-linux-android \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/i686-linux-android -target i686-linux-android$(MIN_API_LEVEL)" \
 	AR=llvm-ar \
 	CFLAGS="-Wno-error=unused-but-set-parameter -Wno-error=unused-parameter" \
 	CXX=i686-linux-android$(MIN_API_LEVEL)-clang++ \
@@ -58,8 +56,7 @@ i686-linux-android: CARGO_ENV_FLAGS += \
 	CMAKE_TARGET_OVERRIDE=i686-linux-android$(MIN_API_LEVEL)
 
 x86_64-linux-android: CARGO_ENV_FLAGS += \
-	ISYSROOT=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-	ISYSTEM=$(NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/x86_64-linux-android \
+	BINDGEN_EXTRA_CLANG_ARGS="--sysroot=$(SYSROOT) -isystem $(SYSROOT)/usr/include/x86_64-linux-android -target x86_64-linux-android$(MIN_API_LEVEL)" \
 	AR=llvm-ar \
 	CFLAGS=-Wno-error=unused-but-set-parameter \
 	CXX=x86_64-linux-android$(MIN_API_LEVEL_64_BIT)-clang++ \
