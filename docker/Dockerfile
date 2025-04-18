@@ -41,6 +41,8 @@ RUN $ANDROID_HOME/cmdline-tools/tools/bin/sdkmanager --install "build-tools;${AN
 
 # Add NDK to PATH
 ENV NDK_HOME=${ANDROID_HOME}/ndk/$NDK_VERSION
+ENV ANDROID_NDK_HOME=${NDK_HOME}
+ENV ANDROID_NDK=${NDK_HOME}
 ENV PATH=${PATH}:${NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin
 
 RUN mkdir -p /usr/local/cargo/git
