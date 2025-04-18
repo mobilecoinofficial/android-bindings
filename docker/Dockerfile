@@ -54,7 +54,7 @@ RUN rustup toolchain install $(cat rust-toolchain) \
     && rustup component add rustfmt
 
 # AWS tools (needed by CI)
-RUN pip3 install awscli
+# TODO RUN pip3 install awscli
 
 
 ENV ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${NDK_VERSION}
