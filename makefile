@@ -81,7 +81,7 @@ publish: libs
 	./gradlew publish
 
 ci: setup-docker
-	docker run \
+	docker run --platform linux/amd64 \
 		--rm \
 		-e MAVEN_USER \
 		-e MAVEN_PASSWORD \
@@ -108,7 +108,7 @@ strip:
 	llvm-strip target/x86_64/x86_64-linux-android/$(CARGO_PROFILE)/libmobilecoin_android.so
 
 build: setup-docker
-	docker run \
+	docker run --platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -120,7 +120,7 @@ dist: build
 	tar -czf android-bindings.tar.gz -C build .
 
 docker_image:
-	docker build \
+	docker build --platform linux/amd64 \
 		-t $(DOCKER_BUILDER_IMAGE_TAG) \
 		docker
 
@@ -128,7 +128,7 @@ publish_docker_image: docker_image
 	docker image push $(DOCKER_BUILDER_IMAGE_TAG)
 
 clean:
-	docker run \
+	docker run --platform linux/amd64 \
 		--rm \
 		-v $(pwd):/home/rust/ \
 		-v $(BUILD_DEPS_FOLDER):/usr/local/cargo/git \
@@ -137,7 +137,7 @@ clean:
 		cargo clean
 
 bash: setup-docker
-	docker run \
+	docker run --platform linux/amd64 \
 		--rm \
 		-it \
 		-v $(pwd):/home/rust/ \

@@ -1,9 +1,9 @@
-FROM rust:1.68 AS android-bindings-builder
+FROM rust:1.74 AS android-bindings-builder
 USER root
-ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-8092744_latest.zip" \
+ENV SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" \
     ANDROID_HOME="/usr/local/android-sdk" \
     ANDROID_VERSION=31 \
-    ANDROID_BUILD_TOOLS_VERSION=32.0.0 \
+    ANDROID_BUILD_TOOLS_VERSION=34.0.0 \
     NDK_VERSION="28.0.13004108" \
     PATH="$PATH":/usr/local/bin:/usr/local/google-cloud-sdk/bin \
     GCLOUD_URL="https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-294.0.0-linux-x86_64.tar.gz"
@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install --yes \
     apt-utils \
     build-essential \
     cmake \
-    default-jdk \
     file \
+    openjdk-17-jdk \
     libc6-dev \
     python \
     python3-pip \
@@ -55,3 +55,8 @@ RUN rustup toolchain install $(cat rust-toolchain) \
 
 # AWS tools (needed by CI)
 RUN pip3 install awscli
+
+
+ENV ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${NDK_VERSION}
+ENV ANDROID_NDK=${ANDROID_NDK_HOME}
+ENV CMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake
