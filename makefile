@@ -11,7 +11,7 @@ export IAS_MODE ?= PROD
 
 CARGO_PROFILE ?= mobile
 ARCHS = aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-DOCKER_BUILDER_IMAGE_TAG = gcr.io/mobilenode-211420/android-bindings-builder:1_4
+DOCKER_BUILDER_IMAGE_TAG = mobilecoin/android-bindings-builder:latest
 CARGO_BUILD_FLAGS += -Zunstable-options --profile=$(CARGO_PROFILE)
 BUILD_DEPS_FOLDER = /tmp/build/deps/
 MIN_API_LEVEL = 21
@@ -68,7 +68,10 @@ $(ARCHS):
 
 libs: $(ARCHS) strip copy_artifacts
 
-publish: libs
+release: CARGO_BUILD_FLAGS += --locked
+release: libs
+
+publish: release
 	cd lib-wrapper && \
 	./gradlew build && \
 	./gradlew publish
@@ -120,7 +123,7 @@ docker_image:
 		docker
 
 publish_docker_image: docker_image
-	docker image push $(DOCKER_BUILDER_IMAGE_TAG)
+	echo "Use github actions dispatch workflow to publish a new builder docker image"
 
 clean:
 	docker run \
@@ -143,7 +146,8 @@ bash: setup-docker
 		$(DOCKER_BUILDER_IMAGE_TAG) \
 		bash
 
-setup-docker: docker_image
+setup-docker:
+	docker pull $(DOCKER_BUILDER_IMAGE_TAG)
 	mkdir -p $(BUILD_DEPS_FOLDER)
 
 all: setup-docker clean dist
